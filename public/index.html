@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Arena</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root {
+  --grass1: #6fc83c;
+  --grass2: #61b531;
+  --dirt1: #8a5a2b;
+  --dirt2: #6e4520;
+  --dirt3: #573619;
+  --dirt4: #422810;
+  --sky1: #6fc0f2;
+  --sky2: #b8e4ff;
+  --gold: #ffd24a;
+  --panel: #1d2b45;
+  --panel2: #27395c;
+  --accent: #ffcf3f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+html, body { height: 100%; }
+body {
+  font-family: 'Press Start 2P', monospace;
+  background: linear-gradient(180deg, var(--sky1), var(--sky2) 72%, #e3f4ff);
+  color: #fff;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+svg { image-rendering: pixelated; display: block; }
+
+/* ============ PIXEL CLOUDS ============ */
+.cloud {
+  position: absolute;
+  background: #fff;
+  opacity: 0.95;
+  box-shadow:
+    8px -8px 0 0 #fff, 16px -12px 0 0 #fff, 24px -10px 0 0 #fff,
+    32px -14px 0 0 #fff, 40px -8px 0 0 #fff, 48px -4px 0 0 #fff,
+    8px 0 0 0 #fff, 16px 4px 0 0 #fff, 32px 4px 0 0 #fff, 40px 0 0 0 #fff,
+    24px -2px 0 0 #fff;
+  width: 16px; height: 12px;
+  animation: drift linear infinite;
+  z-index: 1;
+}
+@keyframes drift {
+  from { transform: translateX(-200px) scale(var(--s, 2)); }
+  to   { transform: translateX(112vw)  scale(var(--s, 2)); }
+}
+
+/* ============ FLOATING ISLAND ============ */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+.island { position: relative; animation: bob 6s ease-in-out infinite; }
+.island-body { position: relative; }
+.island-ground {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.10), transparent 60%),
+    repeating-linear-gradient(90deg, var(--grass1) 0 26px, var(--grass2) 26px 52px);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 46px 1fr 46px;
+  grid-template-rows: 46px auto 46px auto;
+  gap: 7px;
+  /* pixel-stepped corners */
+  clip-path: polygon(
+    0 24px, 8px 24px, 8px 16px, 16px 16px, 16px 8px, 24px 8px, 24px 0,
+    calc(100% - 24px) 0, calc(100% - 24px) 8px, calc(100% - 16px) 8px,
+    calc(100% - 16px) 16px, calc(100% - 8px) 16px, calc(100% - 8px) 24px, 100% 24px,
+    100% calc(100% - 24px), calc(100% - 8px) calc(100% - 24px),
+    calc(100% - 8px) calc(100% - 16px), calc(100% - 16px) calc(100% - 16px),
+    calc(100% - 16px) calc(100% - 8px), calc(100% - 24px) calc(100% - 8px),
+    calc(100% - 24px) 100%, 24px 100%, 24px calc(100% - 8px),
+    16px calc(100% - 8px), 16px calc(100% - 16px), 8px calc(100% - 16px),
+    8px calc(100% - 24px), 0 calc(100% - 24px));
+}
+.dirt { display: flex; flex-direction: column; align-items: center; margin-top: -2px; }
+.dirt > div { background: repeating-linear-gradient(90deg, var(--c1) 0 18px, var(--c2) 18px 36px); }
+.dirt .d1 { --c1: var(--dirt1); --c2: var(--dirt2); width: 94%; height: 16px; }
+.dirt .d2 { --c1: var(--dirt2); --c2: var(--dirt3); width: 78%; height: 14px; }
+.dirt .d3 { --c1: var(--dirt3); --c2: var(--dirt4); width: 56%; height: 12px; }
+.dirt .d4 { --c1: var(--dirt4); --c2: #2e1b0a;     width: 30%; height: 10px; }
+.deco-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.deco-layer > div { position: absolute; }
+
+/* stadium stands full of fans */
+.stand {
+  background-color: #26304d;
+  border: 3px solid #161d33;
+  image-rendering: pixelated;
+}
+.stand-top    { grid-area: 1 / 1 / 2 / 4; }
+.stand-left   { grid-area: 2 / 1 / 3 / 2; }
+.stand-right  { grid-area: 2 / 3 / 3 / 4; }
+.stand-bottom { grid-area: 3 / 1 / 4 / 4; }
+.island-ground .pitch { grid-area: 2 / 2 / 3 / 3; }
+#bench { grid-area: 4 / 1 / 5 / 4; }
+.island-shadow {
+  width: 55%; height: 16px; margin: 26px auto 0;
+  background: rgba(0, 0, 50, 0.18);
+  border-radius: 50%;
+  filter: blur(5px);
+  animation: shadowpulse 6s ease-in-out infinite;
+}
+@keyframes shadowpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(0.86); } }
+
+/* ============ PITCH ============ */
+.pitch {
+  position: relative;
+  aspect-ratio: 105 / 68;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 36px, rgba(0,0,0,0.05) 36px 72px),
+    repeating-linear-gradient(90deg, var(--grass1) 0 36px, var(--grass2) 36px 72px);
+  border: 4px solid rgba(255,255,255,0.92);
+  overflow: visible;
+}
+.pitch-sm { width: min(440px, 84vw); }
+.pitch-lg { width: min(52vw, 64vh, 660px); cursor: pointer; }
+.pitch-lg:active { filter: brightness(1.1); }
+.line { position: absolute; border: 3px solid rgba(255,255,255,0.92); pointer-events: none; }
+.l-mid    { left: 50%; top: 0; bottom: 0; width: 0; border-width: 0 0 0 3px; }
+.l-circle { left: 50%; top: 50%; width: 24%; aspect-ratio: 1; transform: translate(-50%,-50%); border-radius: 50%; }
+.l-spot   { left: 50%; top: 50%; width: 6px; height: 6px; background: #fff; transform: translate(-50%,-50%); border: 0; }
+.l-boxL   { left: -3px; top: 24%; bottom: 24%; width: 15%; border-right-width: 3px; }
+.l-boxR   { right: -3px; top: 24%; bottom: 24%; width: 15%; border-left-width: 3px; }
+.l-goalL  { left: -3px; top: 38%; bottom: 38%; width: 6%; border-right-width: 3px; }
+.l-goalR  { right: -3px; top: 38%; bottom: 38%; width: 6%; border-left-width: 3px; }
+.goal {
+  position: absolute; width: 4.5%; height: 26%; top: 37%;
+  border: 3px solid #fff;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 2px, transparent 2px 7px),
+    rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.goalL { left: -3px; border-left: 0; }
+.goalR { right: -3px; border-right: 0; }
+.squad-fig { position: absolute; pointer-events: none; filter: drop-shadow(2px 3px 0 rgba(0,0,30,0.25)); }
+
+/* ============ SUBSTITUTES BENCH ============ */
+#bench {
+  display: flex; justify-content: center; align-items: flex-end; gap: 9px;
+  padding: 6px 12px 4px;
+  background: repeating-linear-gradient(90deg, #a06a33 0 16px, #8a5520 16px 32px);
+  border: 3px solid #6e4520;
+  box-shadow: 0 4px 0 #573619;
+  min-height: 46px;
+}
+.bench-slot { position: relative; }
+.bubble {
+  position: absolute; bottom: 112%; left: 50%; transform: translateX(-50%);
+  background: #fff; color: #1d1d1d;
+  border: 2px solid #1d1d1d;
+  padding: 5px 6px;
+  font-size: 6px; line-height: 1.7;
+  width: max-content; max-width: 120px;
+  text-align: center; z-index: 45;
+}
+.bubble b { display: block; color: #b5302a; }
+.bubble::after {
+  content: ''; position: absolute; top: 100%; left: 50%; margin-left: -4px;
+  border: 4px solid transparent; border-top-color: #1d1d1d;
+}
+
+/* ============ LOGIN SCREEN ============ */
+#login-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+}
+#login-island-slot {
+  position: absolute; left: 0; right: 0; top: 6%;
+  display: flex; justify-content: center;
+  z-index: 2;
+}
+.login-card {
+  position: relative; z-index: 10;
+  margin-top: 18vh;
+  background: rgba(18, 30, 56, 0.95);
+  border: 4px solid var(--accent);
+  box-shadow: 0 0 0 4px #101a30, 10px 10px 0 rgba(0, 0, 40, 0.35);
+  padding: 26px 30px;
+  width: 430px; max-width: 92vw;
+  text-align: center;
+}
+.login-card h1 { font-size: 16px; color: var(--accent); line-height: 1.7; margin-bottom: 8px; text-shadow: 3px 3px 0 #000; }
+.login-card .sub { font-size: 8px; color: #9fc4ff; margin-bottom: 16px; line-height: 1.8; }
+.login-card label { display: block; font-size: 8px; text-align: left; margin: 12px 0 6px; color: #cfe3ff; }
+.login-card input {
+  width: 100%; padding: 10px;
+  font-family: inherit; font-size: 9px;
+  background: #0d1626; color: #fff;
+  border: 3px solid #3b568c; outline: none;
+}
+.login-card input:focus { border-color: var(--accent); }
+#login-error { font-size: 8px; color: #ff7b7b; margin-top: 10px; min-height: 12px; line-height: 1.6; }
+.btn {
+  font-family: inherit; font-size: 10px;
+  background: #2ecc40; color: #fff;
+  border: 0; cursor: pointer;
+  padding: 12px 22px; margin-top: 14px;
+  box-shadow: 0 5px 0 #1d8c2c, 3px 8px 0 rgba(0, 0, 30, 0.3);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d8c2c; }
+
+/* ============ GAME SCREEN ============ */
+#game-screen { display: none; position: fixed; inset: 0; }
+#game-screen.active { display: flex; flex-direction: column; }
+
+#hud {
+  display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 4px solid #0d1626;
+  z-index: 20;
+}
+.hud-stat { font-size: 8px; line-height: 1.8; color: #9fc4ff; }
+.hud-stat b { color: var(--accent); font-size: 12px; display: block; }
+#hud .who { font-size: 8px; color: #9fc4ff; text-align: right; line-height: 1.8; }
+#rewards-hud { margin-left: auto; font-size: 8px; text-align: right; line-height: 2; }
+#rewards-hud b { color: var(--gold); }
+#rewards-hud .sol-ico svg { display: inline; vertical-align: -1px; }
+#hud .who.profile { margin-left: 14px; margin-right: 44px; }
+.lvlbar { width: 130px; height: 10px; background: #0d1626; border: 2px solid #3b568c; }
+.lvlbar > div { height: 100%; background: linear-gradient(90deg, #2ecc40, #b9ff5e); width: 0%; }
+
+#main-area { flex: 1; display: flex; min-height: 0; position: relative; }
+
+#pitch-zone {
+  flex: 1;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.float-num {
+  position: absolute;
+  font-size: 13px; color: #fff;
+  text-shadow: 2px 2px 0 #1d8c2c, -1px -1px 0 #1d8c2c;
+  pointer-events: none;
+  animation: rise 0.9s ease-out forwards;
+  z-index: 15;
+}
+.float-num.boosted { color: var(--gold); text-shadow: 2px 2px 0 #8a5a00, -1px -1px 0 #8a5a00; }
+@keyframes rise {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-70px) scale(1.3); }
+}
+
+.bonus-item {
+  position: absolute;
+  cursor: pointer; z-index: 25;
+  animation: bonuspulse 0.55s ease-in-out infinite alternate;
+}
+.bonus-item.gold   { filter: drop-shadow(0 0 12px var(--gold)); }
+.bonus-item.boot   { filter: drop-shadow(0 0 12px #ffe9a0); }
+@keyframes bonuspulse { from { transform: scale(1); } to { transform: scale(1.22); } }
+
+#btn-sound {
+  position: fixed; top: 10px; right: 10px; z-index: 100;
+  width: 38px; height: 38px;
+  font-size: 16px; line-height: 1;
+  background: #142036; color: #fff;
+  border: 3px solid var(--accent); cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(0,0,30,0.4);
+}
+#btn-sound.off { border-color: #555; opacity: 0.7; }
+
+.click-ball {
+  position: absolute; pointer-events: none; z-index: 16;
+  animation: ballpop 0.5s ease-out forwards;
+}
+@keyframes ballpop {
+  0%   { opacity: 1; transform: scale(0.6) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1.5) rotate(160deg) translateY(-30px); }
+}
+
+#card-overlay {
+  display: none;
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  background: rgba(13, 22, 38, 0.94);
+  border: 4px solid #fff;
+  padding: 18px 24px;
+  text-align: center; z-index: 35;
+}
+#card-overlay .card-rect { width: 38px; height: 54px; margin: 0 auto 10px; border: 3px solid rgba(0,0,0,0.3); }
+#card-overlay.yellow .card-rect { background: #ffd400; }
+#card-overlay.red    .card-rect { background: #e2241b; }
+#card-overlay .card-title { font-size: 11px; margin-bottom: 8px; }
+#card-overlay.yellow .card-title { color: #ffd400; }
+#card-overlay.red    .card-title { color: #ff5b52; }
+#card-overlay .card-count { font-size: 16px; color: #fff; }
+
+#referee { position: absolute; left: 58%; top: 26%; z-index: 6; pointer-events: none; }
+#referee .bubble { max-width: 150px; }
+
+#boost-banner {
+  display: none;
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: #5a3a00;
+  font-size: 10px; padding: 10px 16px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 30, 0.3);
+  z-index: 30;
+}
+
+/* ============ SIDE PANEL ============ */
+#side {
+  width: 380px; max-width: 44vw;
+  background: var(--panel);
+  border-left: 4px solid #0d1626;
+  display: flex; flex-direction: column;
+  z-index: 20;
+}
+#tabs { display: flex; }
+#tabs button {
+  flex: 1; font-family: inherit; font-size: 8px;
+  padding: 12px 4px; cursor: pointer;
+  background: #142036; color: #9fc4ff; border: 0;
+  border-bottom: 4px solid #0d1626;
+}
+#tabs button.on { background: var(--panel2); color: var(--accent); border-bottom-color: var(--accent); }
+.tab-body { flex: 1; overflow-y: auto; padding: 12px; display: none; }
+.tab-body.on { display: block; }
+.tab-body::-webkit-scrollbar { width: 8px; }
+.tab-body::-webkit-scrollbar-thumb { background: #3b568c; }
+
+.shop-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel2);
+  border: 3px solid #3b568c;
+  padding: 10px; margin-bottom: 10px;
+}
+.shop-item.locked { opacity: 0.45; }
+.shop-item .ico { width: 42px; display: flex; justify-content: center; flex-shrink: 0; }
+.shop-item .ico.emoji { font-size: 24px; }
+.shop-item .info { flex: 1; font-size: 8px; line-height: 1.8; }
+.shop-item .info b { color: var(--accent); font-size: 9px; }
+.buy {
+  font-family: inherit; font-size: 8px;
+  background: #2ecc40; color: #fff; border: 0;
+  padding: 8px 10px; cursor: pointer;
+  box-shadow: 0 3px 0 #1d8c2c;
+  white-space: nowrap;
+}
+.buy:disabled { background: #555; box-shadow: 0 3px 0 #333; cursor: not-allowed; }
+.buy.owned { background: #3b568c; box-shadow: 0 3px 0 #22345c; }
+
+.quest {
+  background: var(--panel2); border: 3px solid #3b568c;
+  padding: 10px; margin-bottom: 10px;
+  font-size: 8px; line-height: 1.8;
+  display: flex; align-items: center; gap: 10px;
+}
+.quest .info { flex: 1; }
+.quest .reward { color: var(--gold); }
+.quest.done { border-color: #2ecc40; }
+.quest.done .check { color: #2ecc40; font-size: 14px; }
+.qbar { height: 8px; background: #0d1626; border: 2px solid #3b568c; margin-top: 5px; }
+.qbar > div { height: 100%; background: var(--gold); }
+
+#lb-list { font-size: 8px; }
+.lb-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--panel2); border: 3px solid #3b568c;
+  padding: 9px; margin-bottom: 8px; line-height: 1.6;
+}
+.lb-row.me { border-color: var(--gold); }
+.lb-row .rank { width: 26px; color: var(--accent); font-size: 10px; }
+.lb-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.lb-row .wallet { color: #7da0d6; font-size: 7px; }
+.lb-row .score { color: var(--gold); }
+#lb-status { font-size: 7px; color: #7da0d6; margin-bottom: 10px; line-height: 1.8; }
+
+.section-title { font-size: 9px; color: var(--accent); margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
+.section-title:first-child { margin-top: 0; }
+
+#toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  background: #142036; border: 3px solid var(--gold); color: var(--gold);
+  font-size: 9px; padding: 12px 18px; z-index: 60;
+  display: none; line-height: 1.7; text-align: center;
+}
+
+@media (max-width: 900px) {
+  #main-area { flex-direction: column; }
+  .pitch-lg { width: min(86vw, 52vh); }
+  #side { width: 100%; max-width: none; height: 45%; border-left: 0; border-top: 4px solid #0d1626; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login-screen">
+  <div id="login-island-slot">
+    <div class="island" id="login-island">
+      <div class="island-body">
+        <div class="island-ground">
+          <div class="stand stand-top"></div>
+          <div class="stand stand-left"></div>
+          <div class="pitch pitch-sm">
+            <div class="line l-mid"></div><div class="line l-circle"></div><div class="line l-spot"></div>
+            <div class="line l-boxL"></div><div class="line l-boxR"></div>
+            <div class="line l-goalL"></div><div class="line l-goalR"></div>
+            <div class="goal goalL"></div><div class="goal goalR"></div>
+          </div>
+          <div class="stand stand-right"></div>
+          <div class="stand stand-bottom"></div>
+        </div>
+        <div class="dirt"><div class="d1"></div><div class="d2"></div><div class="d3"></div><div class="d4"></div></div>
+      </div>
+      <div class="deco-layer"></div>
+      <div class="island-shadow"></div>
+    </div>
+  </div>
+
+  <div class="login-card">
+    <h1>FOOTBALL<br>ARENA</h1>
+    <div class="sub">Click the pitch. Earn balls. Sign the legends.</div>
+    <label>PLAYER NAME</label>
+    <input id="in-pseudo" maxlength="20" placeholder="e.g. NightStorm" autocomplete="off">
+    <label>SOLANA WALLET ADDRESS</label>
+    <input id="in-wallet" maxlength="44" placeholder="e.g. 7xKXtg2C..." autocomplete="off" spellcheck="false">
+    <div id="login-error"></div>
+    <button class="btn" id="btn-play">&#9654; KICK OFF</button>
+  </div>
+</div>
+
+<!-- ================= GAME ================= -->
+<div id="game-screen">
+  <div id="hud">
+    <div class="hud-stat">BALLS<b id="hud-balls">0</b></div>
+    <div class="hud-stat">PER CLICK<b id="hud-click">2</b></div>
+    <div class="hud-stat">PER SEC<b id="hud-sec">0</b></div>
+    <div class="hud-stat">LEVEL <span id="hud-lvl" style="color:var(--accent)">1</span>
+      <div class="lvlbar"><div id="hud-lvlbar"></div></div>
+      <span id="hud-lvlnext" style="font-size:7px;color:#7da0d6"></span>
+    </div>
+    <div class="hud-stat">RANK<b id="hud-rank">&mdash;</b></div>
+    <div id="rewards-hud">
+      <span style="color:#9fc4ff">&#128176; CREATOR POOL <b id="hud-pool">0.0000</b> <span class="sol-ico"></span></span><br>
+      <span style="color:#9fe84f">YOUR REWARDS <b id="hud-rewards">0.0000</b> <span class="sol-ico"></span></span>
+    </div>
+    <div class="who profile"><span id="hud-pseudo"></span><br><span id="hud-wallet" style="color:#7da0d6"></span></div>
+  </div>
+
+  <div id="main-area">
+    <div id="pitch-zone">
+      <div id="boost-banner">GOLDEN BALL x5 &mdash; <span id="boost-timer">5</span>s</div>
+      <div id="card-overlay">
+        <div class="card-rect"></div>
+        <div class="card-title"></div>
+        <div class="card-count"></div>
+      </div>
+      <div class="island" id="game-island">
+        <div class="island-body">
+          <div class="island-ground">
+            <div class="stand stand-top"></div>
+            <div class="stand stand-left"></div>
+            <div class="pitch pitch-lg" id="pitch">
+              <div class="line l-mid"></div><div class="line l-circle"></div><div class="line l-spot"></div>
+              <div class="line l-boxL"></div><div class="line l-boxR"></div>
+              <div class="line l-goalL"></div><div class="line l-goalR"></div>
+              <div class="goal goalL"></div><div class="goal goalR"></div>
+              <div id="squad-layer"></div>
+              <div id="referee"></div>
+            </div>
+            <div class="stand stand-right"></div>
+            <div class="stand stand-bottom"></div>
+            <div id="bench"></div>
+          </div>
+          <div class="dirt"><div class="d1"></div><div class="d2"></div><div class="d3"></div><div class="d4"></div></div>
+        </div>
+        <div class="deco-layer"></div>
+        <div class="island-shadow"></div>
+      </div>
+    </div>
+
+    <div id="side">
+      <div id="tabs">
+        <button data-tab="shop" class="on">SHOP</button>
+        <button data-tab="quests">QUESTS</button>
+        <button data-tab="leaderboard">TOP 10</button>
+      </div>
+      <div class="tab-body on" id="tab-shop">
+        <div class="section-title">BALL UPGRADE</div>
+        <div id="shop-ball"></div>
+        <div class="section-title">ACCESSORIES</div>
+        <div id="shop-acc"></div>
+        <div class="section-title">FOOTBALLERS (passive balls/sec)</div>
+        <div id="shop-players"></div>
+      </div>
+      <div class="tab-body" id="tab-quests">
+        <div class="section-title" id="st-click">CLICK QUESTS</div>
+        <div id="quests-clicks"></div>
+        <div class="section-title" id="st-squad">SQUAD QUESTS</div>
+        <div id="quests-players"></div>
+        <div class="section-title" id="st-golden">GOLDEN QUESTS</div>
+        <div id="quests-golden"></div>
+      </div>
+      <div class="tab-body" id="tab-leaderboard">
+        <div id="lb-status">Total cumulative balls &mdash; refreshes every 20s</div>
+        <div id="lb-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<button id="btn-sound" title="Toggle sound">&#128266;</button>
+
+<script>
+'use strict';
+
+/* ================================================================
+   PIXEL SPRITE ENGINE — every sprite is hand-placed pixel rects
+   rendered as crisp SVG (true pixel art, no emojis).
+   ================================================================ */
+function P(x, y, w, h, c) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`; }
+function SVG(w, h, size, inner) {
+  return `<svg viewBox="0 0 ${w} ${h}" width="${size}" height="${Math.round(size * h / w)}"
+    shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+/* ----- Blocky footballer (12 x 16 pixel grid) ----- */
+function spritePlayer(c, size) {
+  const dark = 'rgba(0,0,0,0.18)';
+  let r = '';
+  // hair
+  r += P(3, 0, 6, 1, c.hair) + P(2, 1, 8, 1, c.hair);
+  if (c.curly) r += P(2, 0, 1, 1, c.hair) + P(9, 0, 1, 1, c.hair);
+  // face + hair sides
+  r += P(3, 2, 6, 3, c.skin);
+  r += P(2, 2, 1, 2, c.hair) + P(9, 2, 1, 2, c.hair);
+  // eyes
+  r += P(4, 3, 1, 1, '#181818') + P(7, 3, 1, 1, '#181818');
+  // beard or mouth
+  if (c.beard) { r += P(3, 4, 6, 1, c.hair) + P(5, 4, 2, 1, c.skin); }
+  else r += P(5, 4, 2, 1, 'rgba(0,0,0,0.25)');
+  // neck
+  r += P(5, 5, 2, 1, c.skin);
+  // jersey torso
+  r += P(2, 6, 8, 4, c.jersey);
+  // collar / accent stripe
+  r += P(2, 6, 8, 1, c.accent);
+  // side shading
+  r += P(2, 7, 1, 3, dark) + P(9, 7, 1, 3, dark);
+  // arms (sleeves then hands)
+  r += P(1, 6, 1, 2, c.jersey) + P(10, 6, 1, 2, c.jersey);
+  r += P(1, 8, 1, 2, c.skin) + P(10, 8, 1, 2, c.skin);
+  // shorts
+  r += P(3, 10, 6, 2, c.shorts);
+  // legs
+  r += P(3, 12, 2, 1, c.skin) + P(7, 12, 2, 1, c.skin);
+  // socks
+  r += P(3, 13, 2, 1, c.socks) + P(7, 13, 2, 1, c.socks);
+  // boots
+  r += P(2, 14, 3, 2, '#1d1d1d') + P(7, 14, 3, 2, '#1d1d1d');
+  r += P(2, 14, 3, 1, '#333') + P(7, 14, 3, 1, '#333');
+  // jersey number
+  if (c.number != null) {
+    r += `<text x="6" y="9.4" font-size="3.2" text-anchor="middle" fill="${c.numColor || '#fff'}"
+      font-family="'Press Start 2P',monospace">${c.number}</text>`;
+  }
+  return SVG(12, 16, size, r);
+}
+
+/* ----- Pixel football / Ballon d'Or (12 x 12) ----- */
+function spriteBall(gold, size) {
+  const base = gold ? '#ffd24a' : '#f4f4f4';
+  const shade = gold ? '#d9a520' : '#c9c9c9';
+  const patch = gold ? '#8a5a00' : '#222';
+  const shine = gold ? '#fff3c4' : '#ffffff';
+  let r = '';
+  // circle body
+  r += P(4, 0, 4, 1, base) + P(2, 1, 8, 1, base) + P(1, 2, 10, 2, base);
+  r += P(0, 4, 12, 4, base) + P(1, 8, 10, 2, base) + P(2, 10, 8, 1, base) + P(4, 11, 4, 1, base);
+  // bottom-right shading (round feel)
+  r += P(9, 3, 2, 1, shade) + P(10, 4, 2, 3, shade) + P(9, 7, 2, 2, shade) + P(7, 9, 3, 1, shade) + P(5, 10, 5, 1, shade);
+  // pentagon patches
+  r += P(5, 4, 3, 3, patch) + P(5, 3, 3, 1, patch);
+  r += P(1, 3, 2, 2, patch) + P(9, 1, 2, 1, patch) + P(2, 8, 2, 2, patch) + P(8, 8, 1, 1, patch);
+  // shine
+  r += P(3, 1, 2, 1, shine) + P(2, 2, 1, 2, shine);
+  // gold sparkle
+  if (gold) r += P(10, 0, 1, 1, '#fff') + P(0, 9, 1, 1, '#fff') + P(11, 6, 1, 1, '#fff');
+  return SVG(12, 12, size, r);
+}
+
+/* ----- Pixel Golden Boot (16 x 11) ----- */
+function spriteBoot(size) {
+  const gold = '#ffd24a', goldD = '#d9a520', goldDD = '#a87410', shine = '#fff3c4';
+  let r = '';
+  // ankle shaft
+  r += P(10, 0, 4, 2, gold) + P(10, 0, 1, 2, shine) + P(13, 0, 1, 2, goldD);
+  r += P(9, 2, 5, 2, gold) + P(13, 2, 1, 2, goldD);
+  // laces
+  r += P(10, 1, 3, 1, goldDD) + P(10, 3, 3, 1, goldDD);
+  // foot body sloping toward the toe (left)
+  r += P(6, 4, 9, 2, gold) + P(3, 5, 3, 1, gold);
+  r += P(1, 6, 14, 2, gold) + P(1, 6, 4, 1, shine) + P(12, 6, 3, 2, goldD);
+  // toe cap
+  r += P(0, 6, 1, 2, gold);
+  // sole
+  r += P(0, 8, 16, 1, goldDD);
+  // studs
+  r += P(1, 9, 1, 2, goldDD) + P(4, 9, 1, 2, goldDD) + P(7, 9, 1, 2, goldDD) + P(10, 9, 1, 2, goldDD) + P(13, 9, 1, 2, goldDD);
+  // sparkles
+  r += P(15, 1, 1, 1, '#fff') + P(2, 4, 1, 1, '#fff') + P(8, 5, 1, 1, '#fff');
+  return SVG(16, 11, size, r);
+}
+
+/* ----- Pixel tree (12 x 15) ----- */
+function spriteTree(size, light) {
+  const g1 = light ? '#5fbf3a' : '#3f9428', g2 = light ? '#4aa52c' : '#2e7a1c';
+  let r = '';
+  r += P(4, 0, 4, 1, g1) + P(3, 1, 6, 2, g1) + P(2, 3, 8, 2, g1) + P(1, 5, 10, 3, g1) + P(2, 8, 8, 2, g1);
+  r += P(7, 2, 2, 1, g2) + P(3, 4, 2, 2, g2) + P(8, 6, 2, 2, g2) + P(4, 8, 2, 1, g2) + P(6, 5, 1, 1, g2);
+  r += P(5, 10, 2, 4, '#6e4520') + P(5, 10, 1, 4, '#8a5a2b');
+  r += P(3, 14, 6, 1, 'rgba(0,0,0,0.15)');
+  return SVG(12, 15, size, r);
+}
+
+/* ----- Pixel trophy (10 x 12) ----- */
+function spriteTrophy(size) {
+  const g = '#ffd24a', gd = '#d9a520', sh = '#fff3c4';
+  let r = '';
+  r += P(1, 0, 8, 1, g) + P(1, 1, 8, 2, g) + P(2, 3, 6, 1, g) + P(3, 4, 4, 1, g) + P(4, 5, 2, 2, gd);
+  r += P(0, 1, 1, 2, gd) + P(9, 1, 1, 2, gd); // handles
+  r += P(2, 1, 1, 2, sh);
+  r += P(3, 7, 4, 1, gd) + P(2, 8, 6, 2, '#6e4520') + P(1, 10, 8, 2, '#573619');
+  return SVG(10, 12, size, r);
+}
+
+/* ----- Pixel click cursor (8 x 10) ----- */
+function spriteCursor(size) {
+  const w = '#fff';
+  let r = '';
+  r += P(0,0,1,8,w) + P(1,1,1,6,w) + P(2,2,1,5,w) + P(3,3,1,4,w) + P(4,4,1,3,w) + P(5,5,1,1,w);
+  r += P(3,7,2,3,w);
+  return SVG(8, 10, size, r);
+}
+
+/* ----- Pixel flower (5 x 5) ----- */
+function spriteFlower(size, color) {
+  let r = '';
+  r += P(1, 0, 3, 1, color) + P(0, 1, 5, 3, color) + P(1, 4, 3, 1, color);
+  r += P(2, 2, 1, 1, '#ffe26b');
+  return SVG(5, 5, size, r);
+}
+
+/* ----- Pixel fence piece (14 x 7) ----- */
+function spriteFence(size) {
+  const w1 = '#a06a33', w2 = '#7d4f22';
+  let r = '';
+  r += P(1, 0, 2, 7, w1) + P(6, 0, 2, 7, w1) + P(11, 0, 2, 7, w1);
+  r += P(2, 0, 1, 7, w2) + P(7, 0, 1, 7, w2) + P(12, 0, 1, 7, w2);
+  r += P(0, 1, 14, 1, w1) + P(0, 4, 14, 1, w2);
+  return SVG(14, 7, size, r);
+}
+
+/* ----- Pixel FIFA World Cup trophy (14 x 21): golden globe held aloft,
+       spiral column, malachite base — like the real one ----- */
+function spriteWorldCup(size) {
+  const g = '#ffd24a', gd = '#d9a520', gdd = '#a87410', sh = '#fff3c4';
+  const mal = '#1f7a4d', malD = '#145236';
+  let r = '';
+  // the globe
+  r += P(5, 0, 4, 1, g) + P(4, 1, 6, 1, g) + P(3, 2, 8, 2, g) + P(4, 4, 6, 1, g) + P(5, 5, 4, 1, g);
+  r += P(9, 1, 1, 1, gd) + P(10, 2, 1, 2, gd) + P(9, 4, 1, 1, gd) + P(8, 5, 1, 1, gd); // shading
+  r += P(4, 1, 1, 1, sh) + P(3, 2, 1, 2, sh);                                          // shine
+  r += P(5, 2, 4, 1, gdd) + P(6, 3, 2, 1, gdd);                                        // continents
+  // two figures' arms reaching up to hold the globe
+  r += P(2, 4, 2, 1, g) + P(10, 4, 2, 1, g);
+  r += P(2, 5, 2, 2, g) + P(10, 5, 2, 2, g);
+  r += P(3, 7, 2, 2, g) + P(9, 7, 2, 2, g);
+  r += P(2, 5, 1, 2, sh) + P(11, 5, 1, 2, gd);
+  // figures' backs curving into the column
+  r += P(4, 9, 6, 1, g) + P(4, 9, 1, 1, sh) + P(9, 9, 1, 1, gd);
+  // spiral column
+  r += P(5, 10, 4, 5, g) + P(5, 10, 1, 5, sh) + P(8, 10, 1, 5, gd);
+  r += P(6, 11, 2, 1, gd) + P(6, 13, 2, 1, gd); // spiral grooves
+  // column flare
+  r += P(4, 15, 6, 1, g) + P(3, 16, 8, 1, gd);
+  // malachite base with golden ring
+  r += P(2, 17, 10, 1, g) + P(2, 17, 1, 1, sh);
+  r += P(1, 18, 12, 2, mal) + P(1, 19, 12, 1, malD);
+  r += P(3, 18, 1, 1, '#2da366') + P(8, 18, 1, 1, '#2da366'); // malachite sparkle
+  r += P(0, 20, 14, 1, malD);
+  return SVG(14, 21, size, r);
+}
+
+/* ----- Solana logo (12 x 10, three slanted bars) ----- */
+function spriteSol(size) {
+  const bars = [['#00ffa3', 0], ['#7a6cff', 4], ['#dc1fff', 8]];
+  let r = '';
+  for (const [c, y] of bars) {
+    const off = y === 4 ? 0 : 2; // middle bar slants the other way
+    r += `<polygon points="${y === 4 ? '0,' + y + ' 9,' + y + ' 12,' + (y + 2) + ' 3,' + (y + 2)
+                                     : '3,' + y + ' 12,' + y + ' 9,' + (y + 2) + ' 0,' + (y + 2)}" fill="${c}"/>`;
+  }
+  return SVG(12, 10, size, r);
+}
+
+/* ----- Crowd tile for the stands (random pixel fans on seat tiers) ----- */
+function crowdTile() {
+  const SKIN = ['#f0c8a0', '#e8b88a', '#c98e5a', '#8a5a36', '#6e4427'];
+  const SHIRT = ['#e84f4f', '#4f8fe8', '#f3d36b', '#9fe84f', '#fff', '#ff8c42', '#b56cff', '#e84f8a', '#5ad6d6'];
+  const W = 72, H = 44, TIER = 11;
+  let r = P(0, 0, W, H, '#26304d');
+  for (let ty = 0; ty + TIER <= H; ty += TIER) {
+    r += P(0, ty + TIER - 2, W, 2, '#161d33'); // seat row edge
+    for (let x = 2; x < W - 4; x += 6) {
+      const jx = x + Math.floor(Math.random() * 2);
+      const skin = SKIN[Math.floor(Math.random() * SKIN.length)];
+      const shirt = SHIRT[Math.floor(Math.random() * SHIRT.length)];
+      r += P(jx, ty + 2, 3, 3, skin);          // head
+      r += P(jx - 1, ty + 5, 5, 4, shirt);     // body
+    }
+  }
+  return SVG(W, H, W, r);
+}
+
+/* ================= GAME DATA ================= */
+const BALL_MAX_LEVEL = 10;
+// price to upgrade TO level n (index = level)
+const BALL_PRICES = [0, 0, 100, 500, 1500, 3000, 10000, 20000, 40000, 60000, 100000];
+
+// per-click: lv1 = 2 balls, then x1.3 per level, rounded -> 2,3,4,5,7,9,12,16,21,27
+function perClickForBallLevel(lvl) {
+  let v = 2;
+  for (let i = 1; i < lvl; i++) v = Math.round(v * 1.3);
+  return v;
+}
+
+// clicks required to REACH a level (lv2:200 ... lv8:20000, then x2 each level)
+function clicksForLevel(level) {
+  const t = [200, 500, 1000, 2000, 5000, 10000, 20000];
+  if (level <= 1) return 0;
+  if (level <= 8) return t[level - 2];
+  return 20000 * Math.pow(2, level - 8);
+}
+function levelFromClicks(clicks) {
+  let lv = 1;
+  while (clicks >= clicksForLevel(lv + 1)) lv++;
+  return lv;
+}
+
+const FOOTBALLERS = [
+  { id: 'payne',    name: 'Payne',    lvl: 1,  rate: 1,   price: 200,
+    c: { skin:'#f0c8a0', hair:'#6b4a2b', jersey:'#b5302a', accent:'#fff',    shorts:'#fff',    socks:'#b5302a', number:9,  numColor:'#fff' } },
+  { id: 'vinicius', name: 'Vinicius', lvl: 2,  rate: 2,   price: 500,
+    c: { skin:'#6e4427', hair:'#181818', jersey:'#f4f4f4', accent:'#ffd24a', shorts:'#f4f4f4', socks:'#f4f4f4', number:7,  numColor:'#1b3da6' } },
+  { id: 'haaland',  name: 'Haaland',  lvl: 3,  rate: 3,   price: 1000,
+    c: { skin:'#f4d4b0', hair:'#f3d36b', jersey:'#6cabdd', accent:'#fff',    shorts:'#fff',    socks:'#6cabdd', number:9,  numColor:'#1b2a5e' } },
+  { id: 'kane',     name: 'Kane',     lvl: 4,  rate: 5,   price: 2000,
+    c: { skin:'#f0c8a0', hair:'#7a5230', jersey:'#f4f4f4', accent:'#c8102e', shorts:'#1b2a5e', socks:'#f4f4f4', number:9,  numColor:'#1b2a5e' } },
+  { id: 'dembele',  name: 'Dembele',  lvl: 5,  rate: 7,   price: 4000, curly: true,
+    c: { skin:'#7a4a28', hair:'#181818', jersey:'#1b2a5e', accent:'#c8102e', shorts:'#1b2a5e', socks:'#1b2a5e', number:10, numColor:'#fff', curly:true } },
+  { id: 'neymar',   name: 'Neymar',   lvl: 6,  rate: 10,  price: 5000,
+    c: { skin:'#c98e5a', hair:'#2a1d12', jersey:'#ffd24a', accent:'#2e9e41', shorts:'#1b3da6', socks:'#fff',    number:10, numColor:'#2e9e41' } },
+  { id: 'yamal',    name: 'Yamal',    lvl: 7,  rate: 14,  price: 7000,
+    c: { skin:'#c98e5a', hair:'#181818', jersey:'#a4243b', accent:'#1b3da6', shorts:'#1b3da6', socks:'#a4243b', number:19, numColor:'#ffd24a', curly:true } },
+  { id: 'mbappe',   name: 'Mbappé',   lvl: 8,  rate: 20,  price: 10000,
+    c: { skin:'#8a5a36', hair:'#181818', jersey:'#1b2a5e', accent:'#c8102e', shorts:'#fff',    socks:'#1b2a5e', number:7,  numColor:'#fff' } },
+  { id: 'ronaldo',  name: 'Ronaldo',  lvl: 9,  rate: 30,  price: 15000,
+    c: { skin:'#e8b88a', hair:'#181818', jersey:'#a31621', accent:'#2e7d32', shorts:'#1b5e20', socks:'#a31621', number:7,  numColor:'#ffd24a' } },
+  { id: 'messi',    name: 'Messi',    lvl: 10, rate: 50,  price: 20000,
+    c: { skin:'#f0c8a0', hair:'#6b4a2b', jersey:'#75c5f0', accent:'#fff',    shorts:'#181818', socks:'#75c5f0', number:10, numColor:'#181818', beard:true } },
+];
+
+const ACCESSORIES = [
+  { id: 'shoes',   name: 'Boots',             rate: 1,  price: 400,   lvl: 1, ico: () => spriteBoot(34) },
+  { id: 'shorts',  name: 'Shorts',            rate: 2,  price: 2000,  lvl: 3, ico: () => SVG(10, 7, 30,
+      P(0,0,10,2,'#1b3da6') + P(0,2,4,5,'#1b3da6') + P(6,2,4,5,'#1b3da6') + P(0,0,10,1,'#fff') + P(4,2,2,2,'#142a73')) },
+  { id: 'jersey',  name: 'Jersey',            rate: 3,  price: 5000,  lvl: 5, ico: () => SVG(12, 9, 30,
+      P(2,0,8,5,'#c8102e') + P(0,0,2,3,'#c8102e') + P(10,0,2,3,'#c8102e') + P(2,5,8,4,'#c8102e')
+      + P(4,0,4,1,'#fff') + P(2,0,8,1,'#8a0b1f') + P(5,3,2,3,'#fff')) },
+  { id: 'armband', name: "Captain's Armband", rate: 10, price: 30000, lvl: 9, ico: () => SVG(12, 7, 30,
+      P(0,0,12,7,'#ffd24a') + P(0,0,12,1,'#d9a520') + P(0,6,12,1,'#d9a520') + P(0,0,1,7,'#d9a520')
+      + `<text x="6" y="5.4" font-size="5" text-anchor="middle" fill="#1d1d1d" font-family="'Press Start 2P',monospace">C</text>`) },
+];
+
+const CLICK_QUESTS = [200, 500, 1000, 2000, 5000, 10000, 20000, 50000]; // reward = threshold
+const PLAYER_QUESTS = [
+  { count: 1,  reward: 100 },
+  { count: 3,  reward: 500 },
+  { count: 5,  reward: 2000 },
+  { count: 8,  reward: 5000 },
+  { count: 10, reward: 20000 },
+];
+
+// Golden Ball: every 2 min 30, visible 5s -> x5 clicks for 5s
+// Golden Boot: every 1 min, visible 8s -> instant 100x current per-click value
+const GOLDEN = { every: 150000, visible: 5000, boostDur: 5000, mult: 5 };
+const BOOT   = { every: 60000,  visible: 8000, payoutMult: 100 };
+
+const GOLDEN_QUESTS = [
+  { id: 'ball1', type: 'ball', count: 1, reward: 100, label: 'Catch 1 Golden Ball' },
+  { id: 'boot1', type: 'boot', count: 1, reward: 50,  label: 'Catch 1 Golden Boot' },
+  { id: 'ball5', type: 'ball', count: 5, reward: 400, label: 'Catch 5 Golden Balls' },
+  { id: 'boot5', type: 'boot', count: 5, reward: 200, label: 'Catch 5 Golden Boots' },
+];
+
+const CHAT_LINES = [
+  'I wanna enter coach!', 'Sign me coach!', "I'm in good shape!",
+  "Put me in, I'm ready!", "Coach, I'm warmed up!",
+  "I'm fresh!", "I'm gonna make you win!", "I'm gonna click so bad!",
+  "I'll score 3 goals!", "My boots are shining tonight!",
+  'The bench is cold, coach!', 'Been training all week for this!',
+  'Hat-trick loading...', 'Let me cook, coach!', 'I can feel the trophy coming!',
+];
+const LAST_WC = "It's my last World Cup!";
+const LAST_WC_IDS = ['messi', 'ronaldo', 'neymar'];
+
+/* ================= STATE ================= */
+let state = null;
+let session = { pseudo: '', wallet: '' };
+let boostUntil = 0;
+
+function freshState() {
+  return {
+    balls: 0,          // spendable
+    totalBalls: 0,     // cumulative (leaderboard)
+    clicks: 0,
+    ballLevel: 1,
+    players: [],
+    accessories: [],
+    questsClicks: [],
+    questsPlayers: [],
+    questsGolden: [],
+    goldenBalls: 0,
+    goldenBoots: 0,
+  };
+}
+const saveKey = () => 'fic_save_' + session.wallet;
+function save() { try { localStorage.setItem(saveKey(), JSON.stringify(state)); } catch (e) {} }
+function load() {
+  try {
+    const raw = localStorage.getItem(saveKey());
+    if (raw) return Object.assign(freshState(), JSON.parse(raw));
+  } catch (e) {}
+  return freshState();
+}
+
+/* ================= DERIVED ================= */
+const perClickBase = () => perClickForBallLevel(state.ballLevel);
+const perClickNow  = () => perClickBase() * (Date.now() < boostUntil ? GOLDEN.mult : 1);
+function perSecond() {
+  let s = 0;
+  for (const p of FOOTBALLERS) if (state.players.includes(p.id)) s += p.rate;
+  for (const a of ACCESSORIES) if (state.accessories.includes(a.id)) s += a.rate;
+  return s;
+}
+const playerLevel = () => levelFromClicks(state.clicks);
+function earn(n) { state.balls += n; state.totalBalls += n; }
+
+/* ================= HELPERS ================= */
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Math.floor(n).toLocaleString('en-US');
+let toastTimer = null;
+function toast(msg) {
+  const t = $('toast');
+  t.innerHTML = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.style.display = 'none'), 2600);
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+/* ================= STADIUM DECORATION ================= */
+function decorateIsland(islandEl) {
+  // fill every stand with a unique pixel crowd
+  islandEl.querySelectorAll('.stand').forEach(s => {
+    s.style.backgroundImage = `url("data:image/svg+xml;utf8,${encodeURIComponent(crowdTile())}")`;
+  });
+  // World Cup trophy on the right of the pitch — click it for the rewards info
+  const layer = islandEl.querySelector('.deco-layer');
+  layer.innerHTML = `<div class="wc-slot" style="left:96%;top:22%;pointer-events:auto;cursor:pointer"
+    title="World Cup">${spriteWorldCup(46)}</div>`;
+  layer.querySelector('.wc-slot').addEventListener('click', () =>
+    toast('&#127942; Every 2 minutes, top 50 in rank get rewarded!'));
+}
+
+/* ================= AUDIO (WebAudio chiptune, no files needed) ================= */
+const AudioSys = {
+  ctx: null, master: null, muted: false, musicTimer: null, step: 0, mode: null,
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.muted ? 0 : 1;
+    this.master.connect(this.ctx.destination);
+  },
+  tone(f, when, dur, type, vol, slideTo) {
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, when);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, when + dur);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(when); o.stop(when + dur + 0.05);
+  },
+  hiss(when, dur, vol, freq) {
+    const c = this.ctx, len = Math.ceil(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol, when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(when); src.stop(when + dur);
+  },
+  music(mode) {
+    this.init();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.mode === mode) return;
+    clearInterval(this.musicTimer);
+    this.mode = mode; this.step = 0;
+    const stepMs = mode === 'chill' ? 480 : 158;
+    this.musicTimer = setInterval(() => {
+      if (this.muted) return;
+      const t = this.ctx.currentTime + 0.05, s = this.step++;
+      if (mode === 'chill') {
+        // slow dreamy arpeggio (Am7 / Fmaj7)
+        const arp = [220, 261.63, 329.63, 392, 440, 392, 329.63, 261.63];
+        this.tone(arp[s % 8], t, 0.6, 'sine', 0.12);
+        if (s % 8 === 0) this.tone(s % 16 === 0 ? 110 : 87.31, t, 1.8, 'triangle', 0.10);
+        if (s % 16 === 12) this.tone(523.25, t, 1.2, 'sine', 0.05);
+      } else {
+        // hype football chant beat
+        const bass = [110, 0, 110, 130.81, 146.83, 0, 146.83, 164.81];
+        const b = bass[s % 8];
+        if (b) this.tone(b, t, 0.14, 'square', 0.07);
+        if (s % 4 === 0) this.tone(150, t, 0.18, 'sine', 0.22, 40);            // kick
+        if (s % 4 === 2) this.hiss(t, 0.08, 0.10, 6000);                       // hat
+        if (s % 2 === 1) this.hiss(t, 0.04, 0.04, 9000);
+        const lead = [440, 0, 523.25, 0, 659.25, 587.33, 523.25, 440,
+                      0, 440, 0, 523.25, 659.25, 0, 783.99, 659.25];
+        const l = lead[s % 16];
+        if (l && s % 32 >= 16) this.tone(l, t, 0.13, 'square', 0.045);
+      }
+    }, stepMs);
+  },
+  cheer() {
+    this.init();
+    if (this.muted) return;
+    const t = this.ctx.currentTime;
+    // 3 seconds of roaring crowd: swelling filtered noise + voices
+    for (let i = 0; i < 12; i++) {
+      this.hiss(t + i * 0.25, 0.45, 0.16 - i * 0.008, 700 + Math.random() * 900);
+    }
+    for (let i = 0; i < 7; i++) {
+      const f = 280 + Math.random() * 240;
+      this.tone(f, t + Math.random() * 2.2, 0.5, 'sawtooth', 0.025, f * 1.6);
+    }
+  },
+  toggle() {
+    this.init();
+    this.muted = !this.muted;
+    this.master.gain.value = this.muted ? 0 : 1;
+    const b = $('btn-sound');
+    b.innerHTML = this.muted ? '&#128263;' : '&#128266;';
+    b.classList.toggle('off', this.muted);
+  },
+};
+
+/* ================= CLOUDS ================= */
+function spawnClouds(n) {
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.top = (3 + Math.random() * 84) + '%';
+    c.style.setProperty('--s', (1.6 + Math.random() * 2.4).toFixed(2));
+    c.style.animationDuration = (40 + Math.random() * 55) + 's';
+    c.style.animationDelay = (-Math.random() * 70) + 's';
+    document.body.appendChild(c);
+  }
+}
+
+/* ================= LOGIN ================= */
+function isValidSolana(w) { return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(w); }
+
+let verifying = false;
+$('btn-play').addEventListener('click', async () => {
+  if (verifying) return;
+  const pseudo = $('in-pseudo').value.trim();
+  const wallet = $('in-wallet').value.trim();
+  const err = $('login-error');
+  if (pseudo.length < 1) { err.textContent = 'Please enter a player name.'; return; }
+  if (!isValidSolana(wallet)) { err.textContent = 'Invalid Solana wallet address (base58, 32-44 chars).'; return; }
+  err.textContent = 'Checking your $ARENA balance...';
+  verifying = true;
+  let d = { ok: true, requiredLabel: '50k' };
+  try {
+    const res = await fetch('/api/verify-wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet }),
+    });
+    d = await res.json();
+  } catch (e) { /* server unreachable: let the player in (local dev) */ }
+  verifying = false;
+  if (!d.ok) {
+    err.textContent = d.error === 'rpc'
+      ? 'Wallet verification is temporarily unavailable. Please try again.'
+      : `Your wallet has to hold ${d.requiredLabel || '50k'} $ARENA to play the game !`;
+    return;
+  }
+  err.textContent = '';
+  session = { pseudo, wallet };
+  state = load();
+  startGame();
+});
+$('in-wallet').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btn-play').click(); });
+
+/* ================= GAME START ================= */
+function startGame() {
+  $('login-screen').style.display = 'none';
+  $('game-screen').classList.add('active');
+  $('hud-pseudo').textContent = session.pseudo;
+  $('hud-wallet').textContent = session.wallet.slice(0, 4) + '...' + session.wallet.slice(-4);
+
+  decorateIsland($('game-island'));
+  $('referee').innerHTML = spritePlayer(REF_LOOK, 28);
+  $('pitch').style.cursor =
+    `url("data:image/svg+xml;utf8,${encodeURIComponent(spriteBall(false, 26))}") 13 13, pointer`;
+  AudioSys.music('hype');
+  renderShop();
+  renderQuests();
+  renderSquad();
+  renderBench();
+  renderHUD();
+  fetchLeaderboard();
+  fetchRewards();
+  pushScore().then(fetchRank);
+
+  setInterval(passiveTick, 1000);
+  setInterval(save, 5000);
+  setInterval(() => pushScore().then(fetchRank), 15000);
+  setInterval(fetchLeaderboard, 20000);
+  setInterval(benchChat, 10000);
+  setInterval(fetchRewards, 30000);
+  setTimeout(spawnGoldenBall, GOLDEN.every);
+  setTimeout(spawnGoldenBoot, BOOT.every);
+  window.addEventListener('beforeunload', save);
+}
+
+/* ================= CLICKING + CARD SYSTEM ================= */
+// >80 clicks / 10s -> yellow card (15s ban) ; >120 / 10s -> red card (2min ban)
+const CARDS = { window: 10000, yellow: 80, red: 120, yellowBan: 15000, redBan: 120000 };
+const REF_LOOK = { skin: '#f0c8a0', hair: '#181818', jersey: '#222', accent: '#ffd24a', shorts: '#222', socks: '#222' };
+let clickTimes = [];
+let cardUntil = 0;
+let cardKind = null;
+
+function refSay(text, kind) {
+  document.querySelectorAll('#referee .bubble').forEach(b => b.remove());
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.innerHTML = `<b>REFEREE ${kind === 'red' ? '&#128997;' : '&#129000;'}</b>${escapeHtml(text)}`;
+  $('referee').appendChild(b);
+  setTimeout(() => b.remove(), 6000);
+}
+function giveCard(kind) {
+  cardKind = kind;
+  cardUntil = Date.now() + (kind === 'red' ? CARDS.redBan : CARDS.yellowBan);
+  clickTimes = [];
+  const ov = $('card-overlay');
+  ov.className = kind;
+  ov.querySelector('.card-title').textContent = kind === 'red' ? 'RED CARD!' : 'YELLOW CARD!';
+  ov.style.display = 'block';
+  refSay(kind === 'red'
+    ? "You're dangerous, you've injured a player, get out!"
+    : 'You click so fast you gonna hurt a player, calm down for a bit!', kind);
+}
+
+$('pitch').addEventListener('click', (e) => {
+  const now = Date.now();
+  if (now < cardUntil) return; // suspended
+
+  // anti-autoclick rolling window
+  clickTimes.push(now);
+  while (clickTimes.length && clickTimes[0] < now - CARDS.window) clickTimes.shift();
+  if (clickTimes.length > CARDS.red) { giveCard('red'); return; }
+  if (clickTimes.length > CARDS.yellow) { giveCard('yellow'); return; }
+
+  const before = playerLevel();
+  const gain = perClickNow();
+  state.clicks++;
+  earn(gain);
+
+  const r = $('pitch').getBoundingClientRect();
+  const f = document.createElement('div');
+  f.className = 'float-num' + (now < boostUntil ? ' boosted' : '');
+  f.textContent = '+' + fmt(gain);
+  f.style.left = (e.clientX - r.left - 10) + 'px';
+  f.style.top  = (e.clientY - r.top - 14) + 'px';
+  $('pitch').appendChild(f);
+  setTimeout(() => f.remove(), 900);
+
+  // a ball pops right on the cursor too
+  const ball = document.createElement('div');
+  ball.className = 'click-ball';
+  ball.innerHTML = spriteBall(now < boostUntil, 22);
+  ball.style.left = (e.clientX - r.left - 11) + 'px';
+  ball.style.top  = (e.clientY - r.top - 11) + 'px';
+  $('pitch').appendChild(ball);
+  setTimeout(() => ball.remove(), 500);
+
+  const after = playerLevel();
+  if (after > before) {
+    toast('LEVEL UP! You are now <b>LEVEL ' + after + '</b>');
+    renderShop();
+  }
+  checkQuestsUI();
+  renderHUD();
+});
+
+/* ================= PASSIVE INCOME ================= */
+function passiveTick() {
+  const s = perSecond();
+  if (s > 0) { earn(s); renderHUD(); checkQuestsUI(); }
+  if (Date.now() < boostUntil) {
+    $('boost-banner').style.display = 'block';
+    $('boost-timer').textContent = Math.ceil((boostUntil - Date.now()) / 1000);
+  } else {
+    $('boost-banner').style.display = 'none';
+  }
+  // card cooldown display
+  const ov = $('card-overlay');
+  if (Date.now() < cardUntil) {
+    const left = Math.ceil((cardUntil - Date.now()) / 1000);
+    ov.querySelector('.card-count').textContent =
+      left >= 60 ? Math.floor(left / 60) + 'm ' + (left % 60) + 's' : left + 's';
+    ov.style.display = 'block';
+  } else if (ov.style.display === 'block') {
+    ov.style.display = 'none';
+    cardKind = null;
+  }
+}
+
+/* ================= BONUS: GOLDEN BALL & GOLDEN BOOT ================= */
+function placeBonus(el) {
+  el.style.left = (8 + Math.random() * 76) + '%';
+  el.style.top  = (14 + Math.random() * 66) + '%';
+  $('pitch-zone').appendChild(el);
+}
+function spawnGoldenBall() {
+  const b = document.createElement('div');
+  b.className = 'bonus-item gold';
+  b.innerHTML = spriteBall(true, 58);
+  b.title = 'Golden Ball!';
+  placeBonus(b);
+  const gone = setTimeout(() => b.remove(), GOLDEN.visible);
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(gone); b.remove();
+    boostUntil = Date.now() + GOLDEN.boostDur;
+    state.goldenBalls++;
+    toast('GOLDEN BALL! Clicks <b>x' + GOLDEN.mult + '</b> for ' + (GOLDEN.boostDur / 1000) + 's!');
+    renderHUD(); checkQuestsUI(); save();
+  });
+  setTimeout(spawnGoldenBall, GOLDEN.every);
+}
+function spawnGoldenBoot() {
+  const b = document.createElement('div');
+  b.className = 'bonus-item boot';
+  b.innerHTML = spriteBoot(64);
+  b.title = 'Golden Boot!';
+  placeBonus(b);
+  const gone = setTimeout(() => b.remove(), BOOT.visible);
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(gone); b.remove();
+    const payout = perClickBase() * BOOT.payoutMult;
+    earn(payout);
+    state.goldenBoots++;
+    toast('GOLDEN BOOT! <b>+' + fmt(payout) + '</b> balls!');
+    renderHUD(); checkQuestsUI(); save();
+  });
+  setTimeout(spawnGoldenBoot, BOOT.every);
+}
+
+/* ================= SHOP ================= */
+function renderShop() {
+  const lvNow = playerLevel();
+  // ball upgrade
+  const lvl = state.ballLevel;
+  let html;
+  if (lvl < BALL_MAX_LEVEL) {
+    const price = BALL_PRICES[lvl + 1];
+    html = `<div class="shop-item">
+      <div class="ico">${spriteBall(false, 34)}</div>
+      <div class="info"><b>Ball Lv${lvl} &rarr; Lv${lvl + 1}</b><br>
+        ${perClickForBallLevel(lvl)} &rarr; ${perClickForBallLevel(lvl + 1)} balls/click</div>
+      <button class="buy" id="buy-ball" ${state.balls < price ? 'disabled' : ''}>${fmt(price)}</button>
+    </div>`;
+  } else {
+    html = `<div class="shop-item">
+      <div class="ico">${spriteBall(true, 34)}</div>
+      <div class="info"><b>Ball Lv${lvl} (MAX)</b><br>${perClickForBallLevel(lvl)} balls/click</div>
+      <button class="buy owned" disabled>MAX</button></div>`;
+  }
+  $('shop-ball').innerHTML = html;
+  const bb = $('buy-ball');
+  if (bb) bb.onclick = () => {
+    const price = BALL_PRICES[state.ballLevel + 1];
+    if (state.balls < price) return;
+    state.balls -= price;
+    state.ballLevel++;
+    toast('Ball upgraded to <b>Lv' + state.ballLevel + '</b>! (' + perClickBase() + '/click)');
+    renderShop(); renderHUD(); save();
+  };
+
+  // accessories
+  $('shop-acc').innerHTML = ACCESSORIES.map(a => {
+    const owned = state.accessories.includes(a.id);
+    const locked = lvNow < a.lvl;
+    return `<div class="shop-item ${locked ? 'locked' : ''}">
+      <div class="ico">${a.ico()}</div>
+      <div class="info"><b>${a.name}</b> <span style="color:#7da0d6">(Lv${a.lvl})</span><br>+${a.rate} balls/sec</div>
+      <button class="buy ${owned ? 'owned' : ''}" data-acc="${a.id}"
+        ${owned || locked || state.balls < a.price ? 'disabled' : ''}>${owned ? 'OWNED' : locked ? 'LV' + a.lvl : fmt(a.price)}</button>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-acc]').forEach(btn => btn.onclick = () => {
+    const a = ACCESSORIES.find(x => x.id === btn.dataset.acc);
+    if (state.accessories.includes(a.id) || playerLevel() < a.lvl || state.balls < a.price) return;
+    state.balls -= a.price;
+    state.accessories.push(a.id);
+    toast('<b>' + a.name + '</b> equipped! +' + a.rate + ' balls/sec');
+    renderShop(); renderHUD(); save();
+  });
+
+  // footballers
+  $('shop-players').innerHTML = FOOTBALLERS.map(p => {
+    const owned = state.players.includes(p.id);
+    const locked = lvNow < p.lvl;
+    return `<div class="shop-item ${locked ? 'locked' : ''}">
+      <div class="ico">${spritePlayer(p.c, 30)}</div>
+      <div class="info"><b>${p.name}</b> <span style="color:#7da0d6">(Lv${p.lvl})</span><br>+${p.rate} balls/sec</div>
+      <button class="buy ${owned ? 'owned' : ''}" data-player="${p.id}"
+        ${owned || locked || state.balls < p.price ? 'disabled' : ''}>
+        ${owned ? 'SIGNED' : locked ? 'LV' + p.lvl : fmt(p.price)}</button>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-player]').forEach(btn => btn.onclick = () => {
+    const p = FOOTBALLERS.find(x => x.id === btn.dataset.player);
+    if (state.players.includes(p.id) || playerLevel() < p.lvl || state.balls < p.price) return;
+    state.balls -= p.price;
+    state.players.push(p.id);
+    AudioSys.cheer(); // the fans go wild
+    toast('<b>' + p.name + '</b> enters the pitch! +' + p.rate + ' balls/sec');
+    renderShop(); renderSquad(); renderBench(); renderHUD(); checkQuestsUI(); save();
+  });
+}
+
+/* ================= SUBSTITUTES BENCH + CHAT ================= */
+function renderBench() {
+  $('bench').innerHTML = FOOTBALLERS
+    .filter(p => !state.players.includes(p.id))
+    .map(p => `<div class="bench-slot" data-bench="${p.id}" title="${p.name}">${spritePlayer(p.c, 24)}</div>`)
+    .join('');
+}
+function benchChat() {
+  const benched = FOOTBALLERS.filter(p => !state.players.includes(p.id));
+  if (benched.length === 0) return;
+  const p = benched[Math.floor(Math.random() * benched.length)];
+  const pool = CHAT_LINES.slice();
+  if (LAST_WC_IDS.includes(p.id)) pool.push(LAST_WC, LAST_WC); // they really mean it
+  const line = pool[Math.floor(Math.random() * pool.length)];
+  const slot = document.querySelector(`[data-bench="${p.id}"]`);
+  if (!slot) return;
+  document.querySelectorAll('.bubble').forEach(b => b.remove());
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.innerHTML = '<b>' + p.name + '</b>' + escapeHtml(line);
+  slot.appendChild(b);
+  setTimeout(() => b.remove(), 4500);
+}
+
+/* squad figures standing on the pitch */
+const SQUAD_SPOTS = [[18,28],[34,60],[48,22],[64,58],[78,30],[26,74],[56,76],[72,12],[42,42],[12,52]];
+function renderSquad() {
+  $('squad-layer').innerHTML = state.players.map((id, i) => {
+    const p = FOOTBALLERS.find(x => x.id === id);
+    if (!p) return '';
+    const [x, y] = SQUAD_SPOTS[i % SQUAD_SPOTS.length];
+    return `<span class="squad-fig" style="left:${x}%;top:${y}%" title="${p.name}">${spritePlayer(p.c, 30)}</span>`;
+  }).join('');
+}
+
+/* ================= QUESTS ================= */
+function renderQuests() {
+  $('quests-clicks').innerHTML = CLICK_QUESTS.map(t => {
+    const done = state.questsClicks.includes(t);
+    const claimable = !done && state.clicks >= t;
+    const pct = Math.min(100, state.clicks / t * 100);
+    return `<div class="quest ${done ? 'done' : ''}">
+      <div class="info">Reach <b>${fmt(t)}</b> clicks
+        <span class="reward">+${fmt(t)}</span>
+        <div class="qbar"><div style="width:${pct}%"></div></div></div>
+      ${done ? '<span class="check">&#10004;</span>'
+             : `<button class="buy" data-qc="${t}" ${claimable ? '' : 'disabled'}>CLAIM</button>`}
+    </div>`;
+  }).join('');
+  $('quests-players').innerHTML = PLAYER_QUESTS.map(q => {
+    const done = state.questsPlayers.includes(q.count);
+    const have = state.players.length;
+    const claimable = !done && have >= q.count;
+    const pct = Math.min(100, have / q.count * 100);
+    return `<div class="quest ${done ? 'done' : ''}">
+      <div class="info">Sign <b>${q.count}</b> footballer${q.count > 1 ? 's' : ''} (${have}/${q.count})
+        <span class="reward">+${fmt(q.reward)}</span>
+        <div class="qbar"><div style="width:${pct}%"></div></div></div>
+      ${done ? '<span class="check">&#10004;</span>'
+             : `<button class="buy" data-qp="${q.count}" ${claimable ? '' : 'disabled'}>CLAIM</button>`}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-qc]').forEach(btn => btn.onclick = () => {
+    const t = +btn.dataset.qc;
+    if (state.questsClicks.includes(t) || state.clicks < t) return;
+    state.questsClicks.push(t);
+    earn(t);
+    toast('Quest complete! <b>+' + fmt(t) + '</b> balls');
+    renderQuests(); renderHUD(); save();
+  });
+  document.querySelectorAll('[data-qp]').forEach(btn => btn.onclick = () => {
+    const q = PLAYER_QUESTS.find(x => x.count === +btn.dataset.qp);
+    if (state.questsPlayers.includes(q.count) || state.players.length < q.count) return;
+    state.questsPlayers.push(q.count);
+    earn(q.reward);
+    toast('Squad quest complete! <b>+' + fmt(q.reward) + '</b> balls');
+    renderQuests(); renderHUD(); save();
+  });
+
+  // golden quests
+  $('quests-golden').innerHTML = GOLDEN_QUESTS.map(q => {
+    const done = state.questsGolden.includes(q.id);
+    const have = q.type === 'ball' ? state.goldenBalls : state.goldenBoots;
+    const claimable = !done && have >= q.count;
+    const pct = Math.min(100, have / q.count * 100);
+    return `<div class="quest ${done ? 'done' : ''}">
+      <div class="info">${q.label} (${Math.min(have, q.count)}/${q.count})
+        <span class="reward">+${fmt(q.reward)}</span>
+        <div class="qbar"><div style="width:${pct}%"></div></div></div>
+      ${done ? '<span class="check">&#10004;</span>'
+             : `<button class="buy" data-qg="${q.id}" ${claimable ? '' : 'disabled'}>CLAIM</button>`}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-qg]').forEach(btn => btn.onclick = () => {
+    const q = GOLDEN_QUESTS.find(x => x.id === btn.dataset.qg);
+    const have = q.type === 'ball' ? state.goldenBalls : state.goldenBoots;
+    if (state.questsGolden.includes(q.id) || have < q.count) return;
+    state.questsGolden.push(q.id);
+    earn(q.reward);
+    toast('Golden quest complete! <b>+' + fmt(q.reward) + '</b> balls');
+    renderQuests(); renderHUD(); save();
+  });
+}
+let lastClaimable = '';
+function checkQuestsUI() {
+  const sig = CLICK_QUESTS.filter(t => !state.questsClicks.includes(t) && state.clicks >= t).join(',')
+    + '|' + PLAYER_QUESTS.filter(q => !state.questsPlayers.includes(q.count) && state.players.length >= q.count).map(q => q.count).join(',')
+    + '|' + state.goldenBalls + ':' + state.goldenBoots
+    + '|' + Math.floor(state.clicks / 25);
+  if (sig !== lastClaimable) { lastClaimable = sig; renderQuests(); }
+}
+
+/* ================= HUD ================= */
+let lastBalls = -1;
+function renderHUD() {
+  $('hud-balls').textContent = fmt(state.balls);
+  $('hud-click').textContent = fmt(perClickNow()) + (Date.now() < boostUntil ? ' x5' : '');
+  $('hud-sec').textContent = fmt(perSecond());
+  const lv = playerLevel();
+  $('hud-lvl').textContent = lv;
+  const cur = clicksForLevel(lv), next = clicksForLevel(lv + 1);
+  $('hud-lvlbar').style.width = Math.min(100, (state.clicks - cur) / (next - cur) * 100) + '%';
+  $('hud-lvlnext').textContent = fmt(state.clicks) + ' / ' + fmt(next) + ' clicks';
+  if (Math.floor(state.balls) !== lastBalls) {
+    lastBalls = Math.floor(state.balls);
+    refreshBuyButtons();
+  }
+}
+function refreshBuyButtons() {
+  const bb = $('buy-ball');
+  if (bb && state.ballLevel < BALL_MAX_LEVEL) bb.disabled = state.balls < BALL_PRICES[state.ballLevel + 1];
+  const lvNow = playerLevel();
+  document.querySelectorAll('[data-acc]').forEach(btn => {
+    const a = ACCESSORIES.find(x => x.id === btn.dataset.acc);
+    if (!state.accessories.includes(a.id) && lvNow >= a.lvl) {
+      btn.disabled = state.balls < a.price;
+      if (btn.textContent.trim().startsWith('LV')) btn.textContent = fmt(a.price);
+      btn.closest('.shop-item').classList.remove('locked');
+    }
+  });
+  document.querySelectorAll('[data-player]').forEach(btn => {
+    const p = FOOTBALLERS.find(x => x.id === btn.dataset.player);
+    if (!state.players.includes(p.id) && lvNow >= p.lvl) {
+      btn.disabled = state.balls < p.price;
+      if (btn.textContent.trim().startsWith('LV')) btn.textContent = fmt(p.price);
+      btn.closest('.shop-item').classList.remove('locked');
+    }
+  });
+}
+
+/* ================= TABS ================= */
+document.querySelectorAll('#tabs button').forEach(btn => btn.onclick = () => {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tab-body').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  $('tab-' + btn.dataset.tab).classList.add('on');
+  if (btn.dataset.tab === 'leaderboard') fetchLeaderboard();
+});
+
+/* ================= LEADERBOARD (online) ================= */
+async function pushScore() {
+  if (!state) return;
+  try {
+    await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pseudo: session.pseudo,
+        wallet: session.wallet,
+        totalBalls: Math.floor(state.totalBalls),
+        level: playerLevel(),
+      }),
+    });
+  } catch (e) { /* offline - retry next interval */ }
+}
+async function fetchRewards() {
+  try {
+    const res = await fetch('/api/rewards?wallet=' + encodeURIComponent(session.wallet || ''));
+    const d = await res.json();
+    $('hud-pool').textContent = (d.totalClaimed || 0).toFixed(4);
+    $('hud-rewards').textContent = (d.yourRewards || 0).toFixed(4);
+  } catch (e) { /* offline */ }
+}
+async function fetchRank() {
+  if (!session.wallet) return;
+  try {
+    const res = await fetch('/api/rank/' + encodeURIComponent(session.wallet));
+    const d = await res.json();
+    $('hud-rank').textContent = d.rank ? '#' + d.rank : '—';
+  } catch (e) { /* offline */ }
+}
+async function fetchLeaderboard() {
+  const list = $('lb-list'), status = $('lb-status');
+  try {
+    const res = await fetch('/api/leaderboard');
+    const top = await res.json();
+    status.textContent = 'Total cumulative balls — refreshes every 20s';
+    const myShort = session.wallet ? session.wallet.slice(0, 4) + '...' + session.wallet.slice(-4) : '';
+    list.innerHTML = top.length === 0
+      ? '<div style="font-size:8px;color:#7da0d6">No scores yet. Be the first!</div>'
+      : top.map((r, i) => `<div class="lb-row ${r.wallet === myShort ? 'me' : ''}">
+          <span class="rank">#${i + 1}</span>
+          <span class="name">${escapeHtml(r.pseudo)}<br><span class="wallet">${r.wallet} &middot; Lv${r.level}</span></span>
+          <span class="score">${fmt(r.totalBalls)}</span>
+        </div>`).join('');
+  } catch (e) {
+    status.textContent = 'Leaderboard offline — start the server (npm start)';
+  }
+}
+
+/* ================= INIT ================= */
+spawnClouds(10);
+decorateIsland($('login-island'));
+// pixel logos on quest section titles
+$('st-click').innerHTML  = spriteCursor(13) + ' CLICK QUESTS';
+$('st-squad').innerHTML  = spritePlayer(FOOTBALLERS[0].c, 12) + ' SQUAD QUESTS';
+$('st-golden').innerHTML = spriteBall(true, 14) + ' GOLDEN QUESTS';
+// Solana logos in the rewards HUD
+document.querySelectorAll('.sol-ico').forEach(el => el.innerHTML = spriteSol(11));
+// sound toggle (top right)
+$('btn-sound').addEventListener('click', () => AudioSys.toggle());
+// chill music starts on the first interaction with the login screen (browser autoplay rules)
+document.addEventListener('pointerdown', function startChill() {
+  if (!state) AudioSys.music('chill');
+  document.removeEventListener('pointerdown', startChill);
+}, { once: false });
+</script>
+</body>
+</html>
