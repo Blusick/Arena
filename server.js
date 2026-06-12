@@ -271,6 +271,21 @@ function logStats() {
 }
 
 app.get('/api/stats', (req, res) => res.json(computeStats()));
+
+// Remote full reset, protected by ADMIN_TOKEN (set it in the environment).
+// Usage: curl -X POST https://YOUR-APP.onrender.com/api/admin/reset -H "x-admin-token: YOUR_TOKEN"
+app.post('/api/admin/reset', (req, res) => {
+  const token = process.env.ADMIN_TOKEN;
+  if (!token || req.headers['x-admin-token'] !== token) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  fs.writeFileSync(DATA_FILE, '{}\n');
+  fs.writeFileSync(REWARDS_FILE, JSON.stringify(
+    { totalClaimed: 0, players: {}, lastClaimAt: null, lastClaimAmount: 0 }, null, 2));
+  fs.writeFileSync(VERSION_FILE, JSON.stringify({ version: DATA_VERSION, wipedAt: Date.now() }));
+  console.log('[reset] ALL STATS WIPED via admin endpoint');
+  res.json({ ok: true, message: 'All stats wiped' });
+});
 setInterval(claimCycle, 120000); // every 2 minutes
 setTimeout(claimCycle, 8000);    // first attempt shortly after boot
 
