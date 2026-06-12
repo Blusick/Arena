@@ -34,6 +34,30 @@ const VERSION_FILE = path.join(DATA_DIR, 'data-version.json');
   }
 })();
 
+/* One-time auto-unban: the previous build auto-banned players from forged
+   (unauthenticated) score submissions. Clear those bans once on deploy. */
+const UNBAN_VERSION = 1;
+const UNBAN_FILE = path.join(DATA_DIR, 'unban-version.json');
+(function autoUnban() {
+  let v = 0;
+  try { v = JSON.parse(fs.readFileSync(UNBAN_FILE, 'utf8')).version || 0; } catch {}
+  if (v < UNBAN_VERSION) {
+    try {
+      const board = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      let count = 0;
+      for (const w of Object.keys(board)) {
+        if (board[w].banned) {
+          delete board[w].banned; delete board[w].banReason; delete board[w].bannedAt;
+          count++;
+        }
+      }
+      fs.writeFileSync(DATA_FILE, JSON.stringify(board, null, 2));
+      fs.writeFileSync(UNBAN_FILE, JSON.stringify({ version: UNBAN_VERSION }));
+      if (count) console.log(`[anticheat] auto-unbanned ${count} wrongly-banned wallet(s)`);
+    } catch (e) { /* no board yet */ }
+  }
+})();
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -181,19 +205,15 @@ app.post('/api/score', (req, res) => {
   const ck = Math.floor(clicks || 0);
   const lv = Math.floor(level);
 
+  // IMPORTANT: /api/score is unauthenticated (no wallet signature), so a
+  // submission could be forged by an attacker using someone else's wallet.
+  // We therefore REJECT suspicious payloads (never persist them) instead of
+  // banning — a forged score simply can't pollute the leaderboard, and an
+  // innocent player's real score, written by their own client, stays intact.
   const cheat = detectCheat(prev, tb, ck, lv, now);
   if (cheat) {
-    board[wallet] = {
-      ...(prev || {}),
-      pseudo: pseudo.trim(), wallet,
-      totalBalls: prev ? prev.totalBalls : 0,
-      level: prev ? prev.level : 1,
-      clicks: prev ? (prev.clicks || 0) : 0,
-      banned: true, banReason: cheat, bannedAt: now, updatedAt: now,
-    };
-    saveBoard(board);
-    console.warn(`[anticheat] BANNED ${pseudo.trim()} (${wallet}): ${cheat}`);
-    return res.json({ ok: false, banned: true });
+    console.warn(`[anticheat] REJECTED score for ${pseudo.trim()} (${wallet}): ${cheat}`);
+    return res.json({ ok: false, rejected: true });
   }
 
   board[wallet] = {
@@ -333,6 +353,29 @@ function logStats() {
 }
 
 app.get('/api/stats', (req, res) => res.json(computeStats()));
+
+// Unban a wallet, or ALL wallets, restoring them to the leaderboard (admin only).
+// One wallet:  -d '{"wallet":"..."}'      All:  -d '{"all":true}'
+app.post('/api/admin/unban', (req, res) => {
+  const token = process.env.ADMIN_TOKEN;
+  if (!token || req.headers['x-admin-token'] !== token) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  const { wallet, all } = req.body || {};
+  const board = loadBoard();
+  let count = 0;
+  for (const w of Object.keys(board)) {
+    if (all || w === wallet) {
+      if (board[w].banned) {
+        delete board[w].banned; delete board[w].banReason; delete board[w].bannedAt;
+        count++;
+      }
+    }
+  }
+  saveBoard(board);
+  console.log(`[anticheat] UNBANNED ${count} wallet(s) via admin endpoint`);
+  res.json({ ok: true, unbanned: count });
+});
 
 // Full leaderboard dump with complete wallets + ban info (admin only).
 // Usage: curl https://YOUR-APP/api/admin/board -H "x-admin-token: TOKEN"
