@@ -354,6 +354,156 @@ function logStats() {
 
 app.get('/api/stats', (req, res) => res.json(computeStats()));
 
+/* ================= GAME OF THE DAY =================
+   Daily event at GOTD_START (UTC). Phases:
+   registration (until start) -> half1 reflex 5min -> break 5min -> half2 clicks 5min -> finished */
+const GOTD_START = process.env.GOTD_START || '15:00'; // UTC HH:MM
+const GOTD_FILE = path.join(DATA_DIR, 'gotd.json');
+const GOTD_CFG = {
+  entry: 50000,
+  halfMs: 5 * 60 * 1000,
+  maxRate1: 10,  // 5 catches/sec max, golden balls pay x2
+  maxRate2: 16,  // 15 clicks/sec max + a 5pt golden ball every 15s
+  grace: 10000,  // accept score posts up to 10s after a half ends
+};
+
+function gotdTimes(now = Date.now()) {
+  const d = new Date(now);
+  const [h, m] = GOTD_START.split(':').map(Number);
+  const start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, m, 0);
+  return {
+    start,
+    h1End: start + GOTD_CFG.halfMs,
+    h2Start: start + 2 * GOTD_CFG.halfMs,
+    end: start + 3 * GOTD_CFG.halfMs,
+  };
+}
+function gotdPhase(now = Date.now()) {
+  const t = gotdTimes(now);
+  if (now < t.start) return 'registration';
+  if (now < t.h1End) return 'half1';
+  if (now < t.h2Start) return 'break';
+  if (now < t.end) return 'half2';
+  return 'finished';
+}
+function gotdToday() { return new Date().toISOString().slice(0, 10); }
+function loadGotd() {
+  try {
+    const g = JSON.parse(fs.readFileSync(GOTD_FILE, 'utf8'));
+    if (g.date === gotdToday()) return g;
+  } catch {}
+  return { date: gotdToday(), players: {} };
+}
+function saveGotd(g) { fs.writeFileSync(GOTD_FILE, JSON.stringify(g, null, 2)); }
+function gotdBoard(g) {
+  return Object.values(g.players)
+    .map(p => ({ pseudo: p.pseudo, wallet: p.wallet.slice(0, 4) + '...' + p.wallet.slice(-4),
+                 s1: p.s1, s2: p.s2, total: p.s1 + p.s2 }))
+    .sort((a, b) => b.total - a.total || b.s1 - a.s1)
+    .slice(0, 50);
+}
+
+function gotdWinners(g) {
+  const players = Object.values(g.players);
+  if (!players.length) return null;
+  const w1 = [...players].sort((a, b) => b.s1 - a.s1)[0];
+  const w2 = [...players].sort((a, b) => b.s2 - a.s2)[0];
+  return {
+    h1: w1 && w1.s1 > 0 ? { pseudo: w1.pseudo, score: w1.s1 } : null,
+    h2: w2 && w2.s2 > 0 ? { pseudo: w2.pseudo, score: w2.s2 } : null,
+  };
+}
+
+app.get('/api/gotd/state', (req, res) => {
+  const now = Date.now();
+  const g = loadGotd();
+  const me = req.query.wallet ? g.players[req.query.wallet] : null;
+  const phase = gotdPhase(now);
+  res.json({
+    phase,
+    serverNow: now,
+    times: gotdTimes(now),
+    entry: GOTD_CFG.entry,
+    registered: !!me,
+    playerCount: Object.keys(g.players).length,
+    board: gotdBoard(g),
+    winners: phase === 'finished' ? gotdWinners(g) : null,
+  });
+});
+
+// Log each half's winner (wallet included) once the half is over
+function gotdCheckWinners() {
+  const now = Date.now();
+  const t = gotdTimes(now);
+  const g = loadGotd();
+  if (!Object.keys(g.players).length) return;
+  if (now > t.h1End + GOTD_CFG.grace && !g.h1WinnerLogged) {
+    const w = Object.values(g.players).sort((a, b) => b.s1 - a.s1)[0];
+    if (w && w.s1 > 0) console.log(`[gotd] HALF 1 WINNER: ${w.pseudo} (${w.wallet}) with ${w.s1} pts`);
+    g.h1WinnerLogged = true;
+    saveGotd(g);
+  }
+  if (now > t.end + GOTD_CFG.grace && !g.h2WinnerLogged) {
+    const w = Object.values(g.players).sort((a, b) => b.s2 - a.s2)[0];
+    if (w && w.s2 > 0) console.log(`[gotd] HALF 2 WINNER: ${w.pseudo} (${w.wallet}) with ${w.s2} pts`);
+    g.h2WinnerLogged = true;
+    saveGotd(g);
+  }
+}
+setInterval(gotdCheckWinners, 15000);
+
+app.post('/api/gotd/register', (req, res) => {
+  const { wallet, pseudo, v } = req.body || {};
+  if ((v | 0) < CLIENT_VERSION) return res.json({ ok: false, outdated: true });
+  if (typeof wallet !== 'string' || !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet) ||
+      typeof pseudo !== 'string' || pseudo.trim().length < 1 || pseudo.length > 20) {
+    return res.status(400).json({ ok: false, error: 'invalid' });
+  }
+  if (gotdPhase() !== 'registration') return res.json({ ok: false, error: 'registration closed' });
+  const board = loadBoard();
+  if (board[wallet] && board[wallet].banned) return res.json({ ok: false, banned: true });
+  const g = loadGotd();
+  if (g.players[wallet]) return res.json({ ok: true, already: true });
+  g.players[wallet] = { wallet, pseudo: pseudo.trim(), s1: 0, s2: 0, paidAt: Date.now() };
+  saveGotd(g);
+  console.log(`[gotd] ${pseudo.trim()} registered (${Object.keys(g.players).length} players)`);
+  res.json({ ok: true });
+});
+
+app.post('/api/gotd/score', (req, res) => {
+  const { wallet, half, score, v } = req.body || {};
+  if ((v | 0) < CLIENT_VERSION) return res.json({ ok: false, outdated: true });
+  if (typeof wallet !== 'string' || (half !== 1 && half !== 2) ||
+      typeof score !== 'number' || !isFinite(score) || score < 0) {
+    return res.status(400).json({ ok: false, error: 'invalid' });
+  }
+  const now = Date.now();
+  const t = gotdTimes(now);
+  const halfStart = half === 1 ? t.start : t.h2Start;
+  const halfEnd = half === 1 ? t.h1End : t.end;
+  if (now < halfStart || now > halfEnd + GOTD_CFG.grace) {
+    return res.json({ ok: false, rejected: true, reason: 'wrong phase' });
+  }
+  const g = loadGotd();
+  const p = g.players[wallet];
+  if (!p) return res.json({ ok: false, rejected: true, reason: 'not registered' });
+
+  const s = Math.floor(score);
+  const key = half === 1 ? 's1' : 's2';
+  if (s <= p[key]) return res.json({ ok: true }); // no decrease, idempotent
+  // anti-cheat: score can't exceed what's humanly possible in the elapsed half time
+  const elapsedSec = (Math.min(now, halfEnd) - halfStart) / 1000;
+  const maxRate = half === 1 ? GOTD_CFG.maxRate1 : GOTD_CFG.maxRate2;
+  const cap = elapsedSec * maxRate + 3;
+  if (s > cap) {
+    console.warn(`[gotd] REJECTED score ${s} (half ${half}) for ${p.pseudo} (${wallet}): max possible ~${Math.floor(cap)}`);
+    return res.json({ ok: false, rejected: true, reason: 'impossible score' });
+  }
+  p[key] = s;
+  saveGotd(g);
+  res.json({ ok: true });
+});
+
 // Unban a wallet, or ALL wallets, restoring them to the leaderboard (admin only).
 // One wallet:  -d '{"wallet":"..."}'      All:  -d '{"all":true}'
 app.post('/api/admin/unban', (req, res) => {

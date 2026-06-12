@@ -307,6 +307,144 @@ svg { image-rendering: pixelated; display: block; }
 }
 #btn-changelog:hover { background: #27395c; }
 
+/* ============ GAME OF THE DAY (night stadium) ============ */
+#gotd-screen {
+  display: none;
+  position: fixed; inset: 0; z-index: 150;
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(60, 90, 200, 0.18), transparent 55%),
+    linear-gradient(180deg, #03060f 0%, #0a1228 45%, #16224a 85%, #1d2c5e 100%);
+  flex-direction: column;
+  animation: gotdenter 0.45s ease-out;
+}
+@keyframes gotdenter { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: none; } }
+.star {
+  position: absolute;
+  background: #fff; width: 2px; height: 2px;
+  animation: twinkle var(--tw, 2.2s) ease-in-out infinite alternate;
+}
+.star.big { width: 3px; height: 3px; box-shadow: 0 0 6px #cfe3ff; }
+@keyframes twinkle { from { opacity: 0.15; } to { opacity: 1; } }
+#gotd-moon {
+  position: absolute; top: 38px; right: 7%;
+  width: 64px; height: 64px;
+  background: radial-gradient(circle at 38% 35%, #fffbe8, #ffeFa8 55%, #e8d27a);
+  box-shadow: 0 0 40px rgba(255, 240, 180, 0.45), 0 0 90px rgba(255, 240, 180, 0.18);
+  border-radius: 50%;
+  animation: moonglow 5s ease-in-out infinite alternate;
+}
+@keyframes moonglow {
+  from { box-shadow: 0 0 36px rgba(255,240,180,0.4), 0 0 80px rgba(255,240,180,0.15); }
+  to   { box-shadow: 0 0 52px rgba(255,240,180,0.6), 0 0 110px rgba(255,240,180,0.25); }
+}
+#gotd-header {
+  position: relative; z-index: 5;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 12px 16px;
+  background: rgba(8, 13, 30, 0.85);
+  border-bottom: 4px solid #ffd24a;
+}
+#gotd-header h2 { font-size: 12px; color: var(--gold); text-shadow: 3px 3px 0 #000; }
+#gotd-phase {
+  font-size: 8px; padding: 8px 12px;
+  background: #1a2747; border: 3px solid #3b568c; color: #9fc4ff;
+  animation: phasein 0.4s ease-out;
+}
+@keyframes phasein { from { transform: translateY(-16px); opacity: 0; } to { transform: none; opacity: 1; } }
+#gotd-timer { font-size: 15px; color: #fff; text-shadow: 2px 2px 0 #000; }
+#gotd-back {
+  margin-left: auto;
+  font-family: inherit; font-size: 8px;
+  padding: 10px 14px;
+  background: #1a2747; color: #fff; border: 3px solid #3b568c;
+  cursor: pointer;
+}
+#gotd-back:hover { border-color: var(--gold); }
+#gotd-main { flex: 1; display: flex; min-height: 0; position: relative; z-index: 5; }
+#gotd-arena {
+  flex: 1; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+#gotd-pitch {
+  position: relative;
+  width: min(58vw, 70vh, 760px);
+  aspect-ratio: 105 / 68;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 36px, rgba(255,255,255,0.02) 36px 72px),
+    repeating-linear-gradient(90deg, #14401f 0 36px, #103618 36px 72px);
+  border: 4px solid rgba(220, 235, 255, 0.55);
+  box-shadow: 0 0 50px rgba(80, 120, 255, 0.12), inset 0 0 60px rgba(0, 0, 20, 0.4);
+}
+#gotd-pitch .line { border-color: rgba(220, 235, 255, 0.5); }
+#gotd-playzone { position: absolute; inset: 0; cursor: pointer; }
+.gotd-ball {
+  position: absolute; z-index: 10; cursor: pointer;
+  animation: gotdballin 0.18s ease-out, gotdballout 0.3s ease-in var(--life, 0.8s) forwards;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+@keyframes gotdballin  { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes gotdballout { to { transform: scale(0); opacity: 0; } }
+.gotd-catch {
+  position: absolute; z-index: 12; pointer-events: none;
+  font-size: 13px; color: #ffe06b; text-shadow: 2px 2px 0 #000;
+  animation: rise 0.7s ease-out forwards;
+}
+.gotd-ripple {
+  position: absolute; z-index: 9; pointer-events: none;
+  width: 16px; height: 16px; border: 3px solid rgba(255, 224, 107, 0.8); border-radius: 50%;
+  animation: rippleout 0.45s ease-out forwards;
+}
+@keyframes rippleout { to { transform: scale(4); opacity: 0; } }
+#gotd-msg {
+  position: absolute; z-index: 20;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: rgba(8, 13, 30, 0.94);
+  border: 4px solid var(--gold);
+  box-shadow: 0 0 0 4px #060a18, 8px 8px 0 rgba(0, 0, 20, 0.5);
+  padding: 24px 28px; text-align: center;
+  max-width: 86%;
+  font-size: 9px; line-height: 2.1; color: #cfe3ff;
+  animation: phasein 0.4s ease-out;
+}
+#gotd-msg .big { font-size: 13px; color: var(--gold); display: block; margin: 8px 0; text-shadow: 2px 2px 0 #000; }
+#gotd-msg .huge { font-size: 22px; color: #fff; display: block; margin: 10px 0; text-shadow: 3px 3px 0 #000; }
+#gotd-hud {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 22; font-size: 10px; color: var(--gold);
+  background: rgba(8, 13, 30, 0.9); border: 3px solid var(--gold);
+  padding: 10px 16px; text-shadow: 2px 2px 0 #000;
+  display: none;
+}
+#gotd-side {
+  width: 320px; max-width: 40vw;
+  background: rgba(8, 13, 30, 0.88);
+  border-left: 4px solid #ffd24a;
+  padding: 12px; overflow-y: auto;
+}
+#gotd-side h3 { font-size: 9px; color: var(--gold); margin-bottom: 10px; }
+.gotd-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #101a36; border: 3px solid #28386b;
+  padding: 8px; margin-bottom: 7px;
+  font-size: 7px; line-height: 1.7;
+  animation: phasein 0.3s ease-out;
+}
+.gotd-row.me { border-color: var(--gold); }
+.gotd-row .rank { width: 24px; color: var(--accent); font-size: 9px; }
+.gotd-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.gotd-row .pts { color: var(--gold); }
+.gotd-row .halves { color: #7da0d6; font-size: 6px; }
+#gotd-winner-trophy { margin: 0 auto 8px; width: fit-content; animation: trophypulse 0.8s ease-in-out infinite alternate; }
+@keyframes trophypulse { from { transform: scale(1); filter: drop-shadow(0 0 8px var(--gold)); } to { transform: scale(1.15); filter: drop-shadow(0 0 22px var(--gold)); } }
+.confetti {
+  position: absolute; width: 6px; height: 6px; z-index: 30; pointer-events: none;
+  animation: confettifall var(--cd, 2.5s) linear forwards;
+}
+@keyframes confettifall {
+  from { transform: translateY(-20px) rotate(0); opacity: 1; }
+  to   { transform: translateY(105vh) rotate(720deg); opacity: 0.4; }
+}
+
 /* pixel modal windows */
 #modal-overlay {
   display: none;
@@ -378,10 +516,16 @@ svg { image-rendering: pixelated; display: block; }
 #btn-gotd {
   font-family: inherit; font-size: 7px;
   padding: 8px 10px; line-height: 1.6;
-  background: #3a3f4a; color: #9aa3b2;
-  border: 3px solid #565d6b;
+  background: #2a1f4a; color: #ffe9a0;
+  border: 3px solid var(--gold);
   box-shadow: 2px 2px 0 rgba(0, 0, 30, 0.35);
-  cursor: not-allowed;
+  cursor: pointer;
+  animation: gotdglow 2s ease-in-out infinite alternate;
+}
+#btn-gotd:hover { filter: brightness(1.2); }
+@keyframes gotdglow {
+  from { box-shadow: 2px 2px 0 rgba(0,0,30,0.35), 0 0 4px rgba(255,210,74,0.3); }
+  to   { box-shadow: 2px 2px 0 rgba(0,0,30,0.35), 0 0 14px rgba(255,210,74,0.7); }
 }
 
 /* live event feed, floating in the sky left of the arena */
@@ -567,7 +711,7 @@ svg { image-rendering: pixelated; display: block; }
       <span id="hud-lvlnext" style="font-size:7px;color:#7da0d6"></span>
     </div>
     <div class="hud-stat">RANK<b id="hud-rank">&mdash;</b></div>
-    <button id="btn-gotd" disabled>&#127918; GAME OF THE DAY<br>COMING SOON</button>
+    <button id="btn-gotd">&#127918; GAME OF THE DAY<br><span id="btn-gotd-sub">LOADING...</span></button>
     <div id="rewards-hud">
       <span style="color:#5ad66b">&#9679; ONLINE <b id="hud-online" style="color:#5ad66b">1</b></span><br>
       <span style="color:#9fc4ff">&#128176; CREATOR POOL <b id="hud-pool">0.0000</b> <span class="sol-ico"></span></span><br>
@@ -642,6 +786,33 @@ svg { image-rendering: pixelated; display: block; }
 
 <div id="toast"></div>
 <div id="hype-overlay"></div>
+
+<!-- ================= GAME OF THE DAY ================= -->
+<div id="gotd-screen">
+  <div id="gotd-stars"></div>
+  <div id="gotd-moon"></div>
+  <div id="gotd-header">
+    <h2>&#127918; GAME OF THE DAY</h2>
+    <div id="gotd-phase">LOADING...</div>
+    <div id="gotd-timer">--:--</div>
+    <button id="gotd-back">&larr; BACK TO ARENA</button>
+  </div>
+  <div id="gotd-main">
+    <div id="gotd-arena">
+      <div id="gotd-hud"></div>
+      <div id="gotd-pitch">
+        <div class="line l-mid"></div><div class="line l-circle"></div>
+        <div class="line l-boxL"></div><div class="line l-boxR"></div>
+        <div id="gotd-playzone"></div>
+      </div>
+      <div id="gotd-msg"></div>
+    </div>
+    <div id="gotd-side">
+      <h3>&#9917; MATCH LEADERBOARD</h3>
+      <div id="gotd-board"></div>
+    </div>
+  </div>
+</div>
 <button id="btn-sound" title="Toggle sound">&#128266;</button>
 <button id="btn-howto">? HOW TO PLAY</button>
 <div id="version-tag"><span id="game-version"></span><button id="btn-changelog">CHANGELOGS</button></div>
@@ -1218,6 +1389,8 @@ function startGame() {
   setInterval(fetchRewards, 30000);
   setInterval(fetchStats, 15000);
   setInterval(fetchEvents, 10000);
+  gotdPoll(); // keep the Game of the Day button label fresh
+  setInterval(() => { if (!Gotd.open) gotdPoll(); }, 60000);
   setTimeout(spawnGoldenBall, GOLDEN.every);
   setTimeout(spawnGoldenBoot, BOOT.every);
   window.addEventListener('beforeunload', save);
@@ -1709,6 +1882,312 @@ async function fetchLeaderboard() {
         </div>`).join('');
   } catch (e) {
     status.textContent = 'Leaderboard offline — start the server (npm start)';
+  }
+}
+
+/* ================= GAME OF THE DAY (client) ================= */
+const Gotd = {
+  open: false, offset: 0, times: null, phase: null, shownPhase: null,
+  registered: false, entry: 100, s1: 0, s2: 0,
+  pollT: null, tickT: null, spawnT: null, pushT: null,
+  catches: [], clickTimes: [], confettiDone: false,
+};
+const gotdNow = () => Date.now() + Gotd.offset;
+
+function gotdStars() {
+  if ($('gotd-stars').children.length) return;
+  let html = '';
+  for (let i = 0; i < 70; i++) {
+    html += `<span class="star ${Math.random() < 0.25 ? 'big' : ''}" style="left:${(Math.random() * 100).toFixed(1)}%;
+      top:${(Math.random() * 92).toFixed(1)}%; --tw:${(1.2 + Math.random() * 3).toFixed(2)}s;
+      animation-delay:${(-Math.random() * 3).toFixed(2)}s"></span>`;
+  }
+  $('gotd-stars').innerHTML = html;
+}
+
+function gotdOpen() {
+  Gotd.open = true;
+  gotdStars();
+  $('gotd-screen').style.display = 'flex';
+  gotdPoll();
+  Gotd.pollT = setInterval(gotdPoll, 4000);
+  Gotd.tickT = setInterval(gotdTick, 250);
+  Gotd.pushT = setInterval(gotdPush, 2500);
+}
+function gotdClose() {
+  Gotd.open = false;
+  $('gotd-screen').style.display = 'none';
+  clearInterval(Gotd.pollT); clearInterval(Gotd.tickT);
+  clearInterval(Gotd.pushT); clearInterval(Gotd.spawnT);
+  Gotd.spawnT = null; Gotd.shownPhase = null;
+  gotdPush(); // final flush
+}
+$('btn-gotd').addEventListener('click', () => { if (state) gotdOpen(); });
+$('gotd-back').addEventListener('click', gotdClose);
+
+async function gotdPoll() {
+  try {
+    const res = await fetch('/api/gotd/state?wallet=' + encodeURIComponent(session.wallet || ''));
+    const d = await res.json();
+    Gotd.offset = d.serverNow - Date.now();
+    Gotd.times = d.times;
+    Gotd.entry = d.entry;
+    Gotd.registered = d.registered;
+    Gotd.winners = d.winners || null;
+    gotdRenderBoard(d.board, d.playerCount);
+    // keep the HUD button label fresh too
+    const phase = gotdComputePhase();
+    $('btn-gotd-sub').textContent =
+      phase === 'registration' ? 'ENTRY ' + fmt(Gotd.entry) + ' BALLS' :
+      phase === 'finished' ? 'ENDED — NEXT TOMORROW' : 'LIVE NOW!';
+  } catch (e) { /* offline */ }
+}
+function gotdComputePhase() {
+  if (!Gotd.times) return null;
+  const n = gotdNow(), t = Gotd.times;
+  if (n < t.start) return 'registration';
+  if (n < t.h1End) return 'half1';
+  if (n < t.h2Start) return 'break';
+  if (n < t.end) return 'half2';
+  return 'finished';
+}
+
+function gotdTick() {
+  if (!Gotd.open || !Gotd.times) return;
+  const phase = gotdComputePhase();
+  if (phase !== Gotd.shownPhase) gotdEnterPhase(phase);
+  // countdown to the next boundary
+  const t = Gotd.times, n = gotdNow();
+  const target = phase === 'registration' ? t.start : phase === 'half1' ? t.h1End
+               : phase === 'break' ? t.h2Start : phase === 'half2' ? t.end : null;
+  if (target) {
+    const left = Math.max(0, target - n);
+    const mm = Math.floor(left / 60000), ss = Math.floor((left % 60000) / 1000);
+    $('gotd-timer').textContent = (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+  } else {
+    $('gotd-timer').textContent = '00:00';
+  }
+  if (phase === 'half1' && Gotd.registered) $('gotd-hud').textContent = 'REFLEX HALF — CATCH THE BALLS! ' + Gotd.s1 + ' pts';
+  if (phase === 'half2' && Gotd.registered) $('gotd-hud').textContent = 'CLICK BATTLE — CLICK THE PITCH! ' + Gotd.s2 + ' clicks';
+}
+
+function gotdEnterPhase(phase) {
+  Gotd.shownPhase = phase;
+  clearInterval(Gotd.spawnT); Gotd.spawnT = null;
+  $('gotd-playzone').innerHTML = '';
+  $('gotd-hud').style.display = 'none';
+  const msg = $('gotd-msg');
+  const labels = { registration: 'REGISTRATION', half1: '1ST HALF — REFLEX', break: 'HALF-TIME BREAK', half2: '2ND HALF — CLICK BATTLE', finished: 'FULL TIME' };
+  $('gotd-phase').textContent = labels[phase] || '...';
+
+  if (phase === 'registration') {
+    msg.style.display = 'block';
+    const startStr = new Date(Gotd.times.start).toUTCString().slice(17, 22);
+    msg.innerHTML = `<span class="big">&#127769; NIGHT MATCH</span>
+      Kick-off at <b style="color:#fff">${startStr} UTC</b><br><br>
+      1st half: reflex game &mdash; catch the balls!<br>2nd half: click battle &mdash; fastest fingers win!<br><br>
+      <span id="gotd-reg-zone"></span>`;
+    gotdRenderRegister();
+  } else if (phase === 'half1') {
+    if (Gotd.registered) {
+      msg.style.display = 'none';
+      $('gotd-hud').style.display = 'block';
+      Gotd.spawnT = setInterval(gotdSpawnBall, 330);
+      AudioSys.cheer();
+    } else {
+      msg.style.display = 'block';
+      msg.innerHTML = `<span class="big">MATCH IN PROGRESS</span>You are not registered &mdash; spectating.<br>Come back tomorrow before kick-off!`;
+    }
+  } else if (phase === 'break') {
+    msg.style.display = 'block';
+    msg.innerHTML = `<span class="big">&#9203; HALF-TIME</span>
+      Your 1st half score: <b style="color:#fff">${Gotd.s1} pts</b><br><br>
+      Next: <b style="color:#fff">CLICK BATTLE</b> &mdash; click the pitch as fast as you can!<br>Stretch those fingers...`;
+  } else if (phase === 'half2') {
+    if (Gotd.registered) {
+      msg.style.display = 'none';
+      $('gotd-hud').style.display = 'block';
+      Gotd.spawnT = setInterval(gotdSpawnGold2, 15000); // golden +5 ball every 15s
+      AudioSys.cheer();
+    } else {
+      msg.style.display = 'block';
+      msg.innerHTML = `<span class="big">MATCH IN PROGRESS</span>You are not registered &mdash; spectating.`;
+    }
+  } else if (phase === 'finished') {
+    msg.style.display = 'block';
+    msg.innerHTML = `<span class="big">&#127937; FULL TIME!</span>
+      <span id="gotd-winner-trophy">${spriteWorldCup(52)}</span>
+      <span id="gotd-winner-line">Computing results...</span><br>
+      <span style="font-size:7px;color:#7da0d6">Next match tomorrow &mdash; same time, same stadium.</span>`;
+    gotdPoll().then(() => {});
+  }
+}
+
+function gotdRenderRegister() {
+  const zone = $('gotd-reg-zone');
+  if (!zone) return;
+  if (Gotd.registered) {
+    zone.innerHTML = `<span style="color:#5ad66b">&#9989; YOU'RE IN! Be there at kick-off.</span>`;
+  } else if (state && state.balls >= Gotd.entry) {
+    zone.innerHTML = `<button class="btn" id="gotd-pay">PAY ${fmt(Gotd.entry)} BALLS TO ENTER</button>`;
+    $('gotd-pay').onclick = async () => {
+      if (state.balls < Gotd.entry || Gotd.registered) return;
+      try {
+        const res = await fetch('/api/gotd/register', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: session.wallet, pseudo: session.pseudo, v: 3 }),
+        });
+        const d = await res.json();
+        if (d.ok) {
+          if (!d.already) { state.balls -= Gotd.entry; save(); renderHUD(); }
+          Gotd.registered = true;
+          AudioSys.buy();
+          gotdRenderRegister();
+        } else {
+          zone.innerHTML = `<span style="color:#ff7b7b">${d.error === 'registration closed' ? 'Registration is closed!' : 'Registration failed, try again.'}</span>`;
+        }
+      } catch (e) { zone.innerHTML = `<span style="color:#ff7b7b">Server unreachable, try again.</span>`; }
+    };
+  } else {
+    zone.innerHTML = `<span style="color:#ff7b7b">You need ${fmt(Gotd.entry)} balls to enter (you have ${state ? fmt(state.balls) : 0}).</span>`;
+  }
+}
+
+/* --- half 1: reflex game --- */
+function gotdSpawnBall() {
+  const zone = $('gotd-playzone');
+  const count = 1 + (Math.random() < 0.4 ? 1 : 0);
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('div');
+    b.className = 'gotd-ball';
+    const gold = Math.random() < 0.12; // golden balls pay double
+    const life = 0.75 + Math.random() * 0.4;
+    b.style.setProperty('--life', life.toFixed(2) + 's');
+    b.style.left = (4 + Math.random() * 88) + '%';
+    b.style.top = (6 + Math.random() * 84) + '%';
+    b.innerHTML = spriteBall(gold, 30 + Math.floor(Math.random() * 14));
+    zone.appendChild(b);
+    const gone = setTimeout(() => b.remove(), life * 1000 + 320);
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearTimeout(gone);
+      const now = Date.now();
+      Gotd.catches = Gotd.catches.filter(t => t > now - 1000);
+      if (Gotd.catches.length >= 4) { b.remove(); return; } // humanly impossible beyond this
+      Gotd.catches.push(now);
+      const pts = gold ? 2 : 1;
+      Gotd.s1 += pts;
+      const f = document.createElement('div');
+      f.className = 'gotd-catch';
+      f.textContent = '+' + pts;
+      if (gold) f.style.color = 'var(--gold)';
+      f.style.left = b.style.left; f.style.top = b.style.top;
+      $('gotd-playzone').appendChild(f);
+      setTimeout(() => f.remove(), 700);
+      b.remove();
+      AudioSys.init();
+      if (!AudioSys.muted) AudioSys.tone((gold ? 880 : 660) + Math.random() * 220, AudioSys.ctx.currentTime, 0.07, 'square', 0.06);
+    });
+  }
+}
+
+/* half 2 bonus: a golden ball in the air every 15s, 1s lifetime, +5 points */
+function gotdSpawnGold2() {
+  const zone = $('gotd-playzone');
+  const b = document.createElement('div');
+  b.className = 'gotd-ball';
+  b.style.setProperty('--life', '0.85s');
+  b.style.left = (8 + Math.random() * 80) + '%';
+  b.style.top = (8 + Math.random() * 80) + '%';
+  b.innerHTML = spriteBall(true, 52);
+  zone.appendChild(b);
+  const gone = setTimeout(() => b.remove(), 1150);
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(gone);
+    Gotd.s2 += 5;
+    const f = document.createElement('div');
+    f.className = 'gotd-catch';
+    f.textContent = '+5';
+    f.style.color = 'var(--gold)';
+    f.style.fontSize = '16px';
+    f.style.left = b.style.left; f.style.top = b.style.top;
+    zone.appendChild(f);
+    setTimeout(() => f.remove(), 700);
+    b.remove();
+    AudioSys.bonus();
+  });
+}
+
+/* --- half 2: click battle --- */
+$('gotd-playzone').addEventListener('click', (e) => {
+  if (gotdComputePhase() !== 'half2' || !Gotd.registered) return;
+  const now = Date.now();
+  Gotd.clickTimes = Gotd.clickTimes.filter(t => t > now - 1000);
+  if (Gotd.clickTimes.length >= 14) return;
+  Gotd.clickTimes.push(now);
+  Gotd.s2++;
+  const r = $('gotd-playzone').getBoundingClientRect();
+  const rip = document.createElement('div');
+  rip.className = 'gotd-ripple';
+  rip.style.left = (e.clientX - r.left - 8) + 'px';
+  rip.style.top = (e.clientY - r.top - 8) + 'px';
+  $('gotd-playzone').appendChild(rip);
+  setTimeout(() => rip.remove(), 450);
+});
+
+async function gotdPush() {
+  if (!Gotd.registered || !session.wallet) return;
+  const phase = gotdComputePhase();
+  const half = phase === 'half1' ? 1 : phase === 'half2' ? 2 : (Gotd.s2 > 0 ? 2 : Gotd.s1 > 0 ? 1 : 0);
+  if (!half) return;
+  const score = half === 1 ? Gotd.s1 : Gotd.s2;
+  if (!score) return;
+  try {
+    await fetch('/api/gotd/score', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: session.wallet, half, score, v: 3 }),
+    });
+  } catch (e) { /* retry next push */ }
+}
+
+function gotdRenderBoard(board, playerCount) {
+  $('gotd-board').innerHTML =
+    `<div style="font-size:7px;color:#7da0d6;margin-bottom:8px">${playerCount} player${playerCount === 1 ? '' : 's'} registered</div>`
+    + (board.length === 0
+      ? '<div style="font-size:7px;color:#7da0d6">Nobody registered yet. Be the first!</div>'
+      : board.map((r, i) => {
+          const myShort = session.wallet ? session.wallet.slice(0, 4) + '...' + session.wallet.slice(-4) : '';
+          return `<div class="gotd-row ${r.wallet === myShort ? 'me' : ''}">
+            <span class="rank">${i === 0 ? '&#129351;' : i === 1 ? '&#129352;' : i === 2 ? '&#129353;' : '#' + (i + 1)}</span>
+            <span class="name">${escapeHtml(r.pseudo)}<br><span class="halves">H1: ${r.s1} &middot; H2: ${r.s2}</span></span>
+            <span class="pts">${r.total}</span>
+          </div>`;
+        }).join(''));
+  // two winners (one per half) + confetti on the finished screen
+  const wl = $('gotd-winner-line');
+  if (wl && Gotd.winners) {
+    const w = Gotd.winners;
+    wl.innerHTML =
+      (w.h1 ? `<span class="big">&#129351; HALF 1 (REFLEX): ${escapeHtml(w.h1.pseudo)} &mdash; ${w.h1.score} pts</span>`
+            : `<span class="big" style="color:#7da0d6">HALF 1: no winner</span>`)
+      + (w.h2 ? `<span class="big">&#129351; HALF 2 (CLICKS): ${escapeHtml(w.h2.pseudo)} &mdash; ${w.h2.score} pts</span>`
+              : `<span class="big" style="color:#7da0d6">HALF 2: no winner</span>`);
+    if ((w.h1 || w.h2) && !Gotd.confettiDone) { Gotd.confettiDone = true; gotdConfetti(); }
+  }
+}
+function gotdConfetti() {
+  const colors = ['#ffd24a', '#5ad66b', '#4f8fe8', '#e84f8a', '#fff', '#ff8c42'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.top = '-10px';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.setProperty('--cd', (1.8 + Math.random() * 2.4) + 's');
+    c.style.animationDelay = (Math.random() * 1.2) + 's';
+    $('gotd-screen').appendChild(c);
+    setTimeout(() => c.remove(), 4800);
   }
 }
 
