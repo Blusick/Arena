@@ -80,12 +80,69 @@ const CHEAT = {
   maxClicksPerSec: 15,           // 150 clicks / 10s = ban
   maxLevelJump: 2,               // +2 levels faster than 10s = ban
   levelJumpWindow: 10,           // seconds
+  firstPostMaxClicks: 300,       // a brand-new player can't already have many clicks
 };
+
+// Level thresholds — MUST mirror the client (lv2:200 ... lv8:20000, then x2)
+function clicksForLevel(level) {
+  const t = [200, 500, 1000, 2000, 5000, 10000, 20000];
+  if (level <= 1) return 0;
+  if (level <= 8) return t[level - 2];
+  return 20000 * Math.pow(2, level - 8);
+}
+function levelFromClicks(c) {
+  let lv = 1;
+  while (c >= clicksForLevel(lv + 1)) lv++;
+  return lv;
+}
+
+// Generous ceilings of what is physically earnable for a given click count.
+// Early players can't have late-game per-click or passive income.
+function maxPerClickFor(ck) { // includes x5 golden boost
+  if (ck < 500) return 25;
+  if (ck < 2000) return 60;
+  if (ck < 10000) return 175;
+  return 505; // ball lv15 (101/click) x5
+}
+function maxPassiveFor(ck) {
+  if (ck < 500) return 10;
+  if (ck < 2000) return 30;
+  if (ck < 10000) return 120;
+  return 620; // every footballer + accessory
+}
+function maxBallsFor(ck, elapsedSec) {
+  const mpc = maxPerClickFor(ck);
+  return ck * mpc                          // clicking (always boosted)
+    + ck * 4 + 3000                        // quest rewards cushion
+    + elapsedSec * maxPassiveFor(ck)       // passive income
+    + (elapsedSec / 60) * 20 * mpc;        // golden boot every minute
+}
 
 function detectCheat(prev, tb, ck, lv, now) {
   if (tb > CHEAT.maxTotalBalls) return `holds ${tb} balls (cap ${CHEAT.maxTotalBalls})`;
-  if (!prev || !prev.updatedAt) return null;
+
+  // the level is DERIVED from clicks: a level the clicks can't justify = injected
+  const maxLv = levelFromClicks(ck);
+  if (lv > maxLv) return `level ${lv} with only ${ck} clicks (max possible: lv${maxLv})`;
+
+  if (!prev || !prev.updatedAt) {
+    // first report of this wallet: it must look like a fresh start
+    if (ck > CHEAT.firstPostMaxClicks) return `new player starting with ${ck} clicks`;
+    if (tb > maxBallsFor(ck, 60)) return `new player starting with ${tb} balls (${ck} clicks)`;
+    return null;
+  }
+
   const dt = (now - prev.updatedAt) / 1000;
+  const elapsed = Math.max(1, (now - (prev.firstSeenAt || prev.updatedAt)) / 1000);
+
+  // lifetime consistency: clicks and balls vs total session time
+  if (ck > elapsed * CHEAT.maxClicksPerSec + CHEAT.firstPostMaxClicks) {
+    return `${ck} clicks in a ${Math.round(elapsed)}s session`;
+  }
+  if (tb > maxBallsFor(ck, elapsed)) {
+    return `${tb} balls impossible with ${ck} clicks in ${Math.round(elapsed)}s (max ~${Math.floor(maxBallsFor(ck, elapsed))})`;
+  }
+
   if (dt < 0.5) return null; // ignore double-fires
   const ballsRate = (tb - prev.totalBalls) / dt;
   const clickRate = (ck - (prev.clicks || 0)) / dt;
@@ -145,6 +202,7 @@ app.post('/api/score', (req, res) => {
     totalBalls: Math.max(tb, prev ? prev.totalBalls : 0),
     level: Math.max(lv, prev ? prev.level : 1),
     clicks: Math.max(ck, prev ? (prev.clicks || 0) : 0),
+    firstSeenAt: prev ? (prev.firstSeenAt || prev.updatedAt) : now,
     updatedAt: now,
   };
   saveBoard(board);
@@ -275,6 +333,36 @@ function logStats() {
 }
 
 app.get('/api/stats', (req, res) => res.json(computeStats()));
+
+// Full leaderboard dump with complete wallets + ban info (admin only).
+// Usage: curl https://YOUR-APP/api/admin/board -H "x-admin-token: TOKEN"
+app.get('/api/admin/board', (req, res) => {
+  const token = process.env.ADMIN_TOKEN;
+  if (!token || req.headers['x-admin-token'] !== token) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  const board = loadBoard();
+  const rows = Object.values(board).sort((a, b) => b.totalBalls - a.totalBalls);
+  res.json(rows);
+});
+
+// Manually ban a wallet (for cheaters who slipped through before this patch).
+// Usage: curl -X POST https://YOUR-APP/api/admin/ban -H "x-admin-token: TOKEN" -H "Content-Type: application/json" -d '{"wallet":"..."}'
+app.post('/api/admin/ban', (req, res) => {
+  const token = process.env.ADMIN_TOKEN;
+  if (!token || req.headers['x-admin-token'] !== token) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  const { wallet } = req.body || {};
+  const board = loadBoard();
+  if (!wallet || !board[wallet]) return res.status(404).json({ error: 'wallet not found' });
+  board[wallet].banned = true;
+  board[wallet].banReason = 'manual ban (admin)';
+  board[wallet].bannedAt = Date.now();
+  saveBoard(board);
+  console.warn(`[anticheat] BANNED ${board[wallet].pseudo} (${wallet}): manual ban (admin)`);
+  res.json({ ok: true, banned: wallet });
+});
 
 // Remote full reset, protected by ADMIN_TOKEN (set it in the environment).
 // Usage: curl -X POST https://YOUR-APP.onrender.com/api/admin/reset -H "x-admin-token: YOUR_TOKEN"
