@@ -1619,9 +1619,15 @@ async function pushScore() {
         totalBalls: Math.floor(state.totalBalls),
         level: playerLevel(),
         clicks: state.clicks,
+        v: 3, // client version, must match server CLIENT_VERSION
       }),
     });
     const d = await res.json();
+    if (d && d.outdated) {
+      toast('New game version available &mdash; reloading...');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
     if (d && d.banned && !bannedShown) {
       bannedShown = true;
       cardUntil = Infinity; // clicking permanently disabled

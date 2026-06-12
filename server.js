@@ -99,9 +99,13 @@ function detectCheat(prev, tb, ck, lv, now) {
   return null;
 }
 
+// Clients older than this version are ignored (they push pre-reset scores)
+const CLIENT_VERSION = 3;
+
 // Upsert a player's score (keyed by wallet, keeps highest total)
 app.post('/api/score', (req, res) => {
-  const { pseudo, wallet, totalBalls, level, clicks } = req.body || {};
+  const { pseudo, wallet, totalBalls, level, clicks, v } = req.body || {};
+  if ((v | 0) < CLIENT_VERSION) return res.json({ ok: false, outdated: true });
   if (
     typeof pseudo !== 'string' || pseudo.trim().length < 1 || pseudo.length > 20 ||
     typeof wallet !== 'string' || !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet) ||
