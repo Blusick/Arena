@@ -26,31 +26,21 @@
 html, body { height: 100%; }
 body {
   font-family: 'Press Start 2P', monospace;
-  background: linear-gradient(180deg, var(--sky1), var(--sky2) 72%, #e3f4ff);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.10), transparent 55%),
+    linear-gradient(180deg, #1f4f8f 0%, #3a82cf 34%, #79bdee 68%, #b9e2fb 100%);
   color: #fff;
   overflow: hidden;
   image-rendering: pixelated;
 }
+/* subtle stadium vignette for a more professional look */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 55;
+  background: radial-gradient(ellipse at 50% 45%, transparent 58%, rgba(8, 16, 40, 0.26));
+}
 svg { image-rendering: pixelated; display: block; }
-
-/* ============ PIXEL CLOUDS ============ */
-.cloud {
-  position: absolute;
-  background: #fff;
-  opacity: 0.95;
-  box-shadow:
-    8px -8px 0 0 #fff, 16px -12px 0 0 #fff, 24px -10px 0 0 #fff,
-    32px -14px 0 0 #fff, 40px -8px 0 0 #fff, 48px -4px 0 0 #fff,
-    8px 0 0 0 #fff, 16px 4px 0 0 #fff, 32px 4px 0 0 #fff, 40px 0 0 0 #fff,
-    24px -2px 0 0 #fff;
-  width: 16px; height: 12px;
-  animation: drift linear infinite;
-  z-index: 1;
-}
-@keyframes drift {
-  from { transform: translateX(-200px) scale(var(--s, 2)); }
-  to   { transform: translateX(112vw)  scale(var(--s, 2)); }
-}
 
 /* ============ FLOATING ISLAND ============ */
 @keyframes bob {
@@ -219,8 +209,9 @@ svg { image-rendering: pixelated; display: block; }
   display: flex; align-items: center; gap: 16px;
   flex-wrap: wrap;
   padding: 10px 16px;
-  background: var(--panel);
+  background: linear-gradient(180deg, #243553, var(--panel));
   border-bottom: 4px solid #0d1626;
+  box-shadow: 0 4px 0 rgba(8, 16, 40, 0.25);
   z-index: 20;
 }
 .hud-stat { font-size: 8px; line-height: 1.8; color: #9fc4ff; }
@@ -288,6 +279,74 @@ svg { image-rendering: pixelated; display: block; }
 }
 #btn-x:hover { background: #27395c; }
 
+#btn-howto {
+  position: fixed; bottom: 12px; left: 58px; z-index: 100;
+  height: 38px; padding: 0 12px;
+  display: flex; align-items: center;
+  font-family: inherit; font-size: 8px;
+  background: #142036; color: #fff;
+  border: 3px solid var(--accent);
+  box-shadow: 3px 3px 0 rgba(0,0,30,0.4);
+  cursor: pointer;
+}
+#btn-howto:hover { background: #27395c; }
+
+#version-tag {
+  position: fixed; bottom: 12px; right: 12px; z-index: 100;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 7px; color: #cfe3ff;
+  text-shadow: 1px 1px 0 rgba(0,0,30,0.5);
+}
+#btn-changelog {
+  font-family: inherit; font-size: 7px;
+  padding: 8px 10px;
+  background: #142036; color: #fff;
+  border: 3px solid var(--accent);
+  box-shadow: 3px 3px 0 rgba(0,0,30,0.4);
+  cursor: pointer;
+}
+#btn-changelog:hover { background: #27395c; }
+
+/* pixel modal windows */
+#modal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5, 10, 25, 0.72);
+  align-items: center; justify-content: center;
+}
+#modal-box {
+  position: relative;
+  background: rgba(18, 30, 56, 0.98);
+  border: 4px solid var(--accent);
+  box-shadow: 0 0 0 4px #101a30, 10px 10px 0 rgba(0, 0, 40, 0.4);
+  width: 540px; max-width: 92vw;
+  max-height: 76vh;
+  display: flex; flex-direction: column;
+}
+#modal-title {
+  font-size: 11px; color: var(--accent);
+  padding: 16px 50px 14px 18px;
+  border-bottom: 3px solid #3b568c;
+  text-shadow: 2px 2px 0 #000;
+}
+#modal-content {
+  padding: 16px 18px;
+  font-size: 8px; line-height: 2.1;
+  color: #cfe3ff;
+  overflow-y: auto;
+}
+#modal-content b { color: var(--accent); }
+#modal-content .mc-item { margin-bottom: 10px; display: flex; gap: 8px; align-items: flex-start; }
+#modal-content .mc-item .mi { flex-shrink: 0; margin-top: 2px; }
+#modal-close {
+  position: absolute; top: 8px; right: 8px;
+  width: 32px; height: 32px;
+  font-family: inherit; font-size: 11px;
+  background: #c8102e; color: #fff;
+  border: 3px solid #8a0b1f; cursor: pointer;
+}
+#modal-close:hover { filter: brightness(1.2); }
+
 .click-ball {
   position: absolute; pointer-events: none; z-index: 16;
   animation: ballpop 0.5s ease-out forwards;
@@ -315,6 +374,49 @@ svg { image-rendering: pixelated; display: block; }
 
 #referee { position: absolute; left: 58%; top: 26%; z-index: 6; pointer-events: none; }
 #referee .bubble { max-width: 150px; }
+
+#btn-gotd {
+  font-family: inherit; font-size: 7px;
+  padding: 8px 10px; line-height: 1.6;
+  background: #3a3f4a; color: #9aa3b2;
+  border: 3px solid #565d6b;
+  box-shadow: 2px 2px 0 rgba(0, 0, 30, 0.35);
+  cursor: not-allowed;
+}
+
+/* live event feed, floating in the sky left of the arena */
+#event-feed {
+  position: absolute; left: 14px; top: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: 250px; z-index: 28;
+  pointer-events: none;
+}
+.event-msg {
+  background: rgba(18, 30, 52, 0.93);
+  border: 3px solid var(--gold);
+  box-shadow: 3px 3px 0 rgba(0, 0, 30, 0.35);
+  color: #ffe9a0;
+  font-size: 7px; line-height: 1.9;
+  padding: 8px 10px;
+  animation: eventin 0.4s ease-out;
+}
+.event-msg b { color: #fff; }
+.event-msg.out { animation: eventout 0.4s ease-in forwards; }
+@keyframes eventin  { from { transform: translateX(-130%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes eventout { to   { transform: translateX(-130%); opacity: 0; } }
+
+/* golden ball hype: pulsing golden screen for the boost duration */
+#hype-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 54;
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(255, 210, 74, 0) 38%, rgba(255, 210, 74, 0.34)),
+    linear-gradient(180deg, rgba(255, 210, 74, 0.10), transparent 30%, transparent 70%, rgba(255, 210, 74, 0.10));
+  animation: hypepulse 0.35s ease-in-out infinite alternate;
+}
+@keyframes hypepulse { from { opacity: 0.45; } to { opacity: 1; } }
+.hype-pitch { filter: saturate(1.45) brightness(1.1) !important; }
 
 #boost-banner {
   display: none;
@@ -366,6 +468,12 @@ svg { image-rendering: pixelated; display: block; }
 }
 .buy:disabled { background: #555; box-shadow: 0 3px 0 #333; cursor: not-allowed; }
 .buy.owned { background: #3b568c; box-shadow: 0 3px 0 #22345c; }
+.buy:hover:not(:disabled) { filter: brightness(1.18); }
+.buy:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #1d8c2c; }
+.shop-item { transition: border-color 0.12s; }
+.shop-item:hover:not(.locked) { border-color: #5a7fc0; }
+#tabs button { transition: background 0.15s, color 0.15s; }
+.btn:hover { filter: brightness(1.1); }
 
 .quest {
   background: var(--panel2); border: 3px solid #3b568c;
@@ -459,7 +567,9 @@ svg { image-rendering: pixelated; display: block; }
       <span id="hud-lvlnext" style="font-size:7px;color:#7da0d6"></span>
     </div>
     <div class="hud-stat">RANK<b id="hud-rank">&mdash;</b></div>
+    <button id="btn-gotd" disabled>&#127918; GAME OF THE DAY<br>COMING SOON</button>
     <div id="rewards-hud">
+      <span style="color:#5ad66b">&#9679; ONLINE <b id="hud-online" style="color:#5ad66b">1</b></span><br>
       <span style="color:#9fc4ff">&#128176; CREATOR POOL <b id="hud-pool">0.0000</b> <span class="sol-ico"></span></span><br>
       <span style="color:#9fe84f">YOUR REWARDS <b id="hud-rewards">0.0000</b> <span class="sol-ico"></span></span>
     </div>
@@ -468,6 +578,7 @@ svg { image-rendering: pixelated; display: block; }
 
   <div id="main-area">
     <div id="pitch-zone">
+      <div id="event-feed"></div>
       <div id="boost-banner">GOLDEN BALL x5 &mdash; <span id="boost-timer">5</span>s</div>
       <div id="card-overlay">
         <div class="card-rect"></div>
@@ -502,7 +613,7 @@ svg { image-rendering: pixelated; display: block; }
       <div id="tabs">
         <button data-tab="shop" class="on">SHOP</button>
         <button data-tab="quests">QUESTS</button>
-        <button data-tab="leaderboard">TOP 10</button>
+        <button data-tab="leaderboard">TOP 30</button>
       </div>
       <div class="tab-body on" id="tab-shop">
         <div class="section-title">BALL UPGRADE</div>
@@ -521,15 +632,26 @@ svg { image-rendering: pixelated; display: block; }
         <div id="quests-golden"></div>
       </div>
       <div class="tab-body" id="tab-leaderboard">
-        <div id="lb-status">Total cumulative balls &mdash; refreshes every 20s</div>
+        <div id="lb-status">TOP 30 &mdash; total cumulative balls &mdash; refreshes every 20s</div>
         <div id="lb-list"></div>
+        <div class="lb-row me" id="lb-me" style="display:none"></div>
       </div>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
+<div id="hype-overlay"></div>
 <button id="btn-sound" title="Toggle sound">&#128266;</button>
+<button id="btn-howto">? HOW TO PLAY</button>
+<div id="version-tag"><span id="game-version"></span><button id="btn-changelog">CHANGELOGS</button></div>
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-content"></div>
+    <button id="modal-close">X</button>
+  </div>
+</div>
 <a id="btn-x" href="https://x.com/ArenaOnSol" target="_blank" rel="noopener" title="Follow @ArenaOnSol on X">
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
 </a>
@@ -747,9 +869,14 @@ function crowdTile() {
 }
 
 /* ================= GAME DATA ================= */
-const BALL_MAX_LEVEL = 10;
-// price to upgrade TO level n (index = level)
-const BALL_PRICES = [0, 0, 100, 500, 1500, 3000, 10000, 20000, 40000, 60000, 100000];
+const GAME_VERSION = 'v1.1';
+const BALL_MAX_LEVEL = 15; // "for the moment" (changelog v1.1)
+// price to upgrade TO level n (index = level); doubles every level after 10
+const BALL_PRICES = (() => {
+  const p = [0, 0, 100, 500, 1500, 3000, 10000, 20000, 40000, 60000, 100000];
+  for (let l = 11; l <= 20; l++) p.push(p[p.length - 1] * 2);
+  return p;
+})();
 
 // per-click: lv1 = 2 balls, then x1.3 per level, rounded -> 2,3,4,5,7,9,12,16,21,27
 function perClickForBallLevel(lvl) {
@@ -788,20 +915,34 @@ const FOOTBALLERS = [
     c: { skin:'#c98e5a', hair:'#181818', jersey:'#a4243b', accent:'#1b3da6', shorts:'#1b3da6', socks:'#a4243b', number:19, numColor:'#ffd24a', curly:true } },
   { id: 'mbappe',   name: 'Mbappé',   lvl: 8,  rate: 20,  price: 10000,
     c: { skin:'#8a5a36', hair:'#181818', jersey:'#1b2a5e', accent:'#c8102e', shorts:'#fff',    socks:'#1b2a5e', number:7,  numColor:'#fff' } },
-  { id: 'ronaldo',  name: 'Ronaldo',  lvl: 9,  rate: 30,  price: 15000,
+  { id: 'ronaldo',  name: 'CR7',      lvl: 10, rate: 30,  price: 15000,
     c: { skin:'#e8b88a', hair:'#181818', jersey:'#a31621', accent:'#2e7d32', shorts:'#1b5e20', socks:'#a31621', number:7,  numColor:'#ffd24a' } },
-  { id: 'messi',    name: 'Messi',    lvl: 10, rate: 50,  price: 20000,
+  { id: 'messi',    name: 'Messi',    lvl: 12, rate: 50,  price: 20000,
     c: { skin:'#f0c8a0', hair:'#6b4a2b', jersey:'#75c5f0', accent:'#fff',    shorts:'#181818', socks:'#75c5f0', number:10, numColor:'#181818', beard:true } },
+  { id: 'zidane',   name: 'Zidane',   lvl: 13, rate: 60,  price: 30000,
+    c: { skin:'#e8b88a', hair:'#9a9a9a', jersey:'#1b3da6', accent:'#fff',    shorts:'#fff',    socks:'#c8102e', number:10, numColor:'#fff' } },
+  { id: 'r9',       name: 'Ronaldo R9', lvl: 15, rate: 80, price: 50000,
+    c: { skin:'#c98e5a', hair:'#181818', jersey:'#ffd24a', accent:'#2e9e41', shorts:'#1b3da6', socks:'#fff',    number:9,  numColor:'#1b3da6' } },
+  { id: 'maradona', name: 'Maradona', lvl: 18, rate: 100, price: 80000,
+    c: { skin:'#e8b88a', hair:'#181818', jersey:'#75c5f0', accent:'#fff',    shorts:'#181818', socks:'#75c5f0', number:10, numColor:'#181818', curly:true } },
+  { id: 'pele',     name: 'Pelé', lvl: 20, rate: 150, price: 120000,
+    c: { skin:'#6e4427', hair:'#181818', jersey:'#ffd24a', accent:'#2e9e41', shorts:'#1b3da6', socks:'#fff',    number:10, numColor:'#2e9e41' } },
 ];
 
 const ACCESSORIES = [
-  { id: 'shoes',   name: 'Boots',             rate: 1,  price: 400,   lvl: 1, ico: () => spriteBoot(34) },
-  { id: 'shorts',  name: 'Shorts',            rate: 2,  price: 2000,  lvl: 3, ico: () => SVG(10, 7, 30,
+  { id: 'socks',   name: 'Socks',             rate: 1,  price: 200,    lvl: 1,  ico: () => SVG(9, 10, 26,
+      P(2,0,4,6,'#fff') + P(2,6,6,3,'#fff') + P(6,7,2,2,'#fff') + P(2,0,4,1,'#c8102e') + P(2,2,4,1,'#c8102e')
+      + P(5,6,3,1,'#dcdcdc') + P(2,8,6,1,'#dcdcdc')) },
+  { id: 'shin',    name: 'Shin Guards',       rate: 2,  price: 1000,   lvl: 3,  ico: () => SVG(8, 11, 26,
+      P(1,0,6,8,'#d8dde6') + P(2,8,4,2,'#d8dde6') + P(1,0,1,8,'#aab2c0') + P(6,0,1,8,'#aab2c0')
+      + P(2,1,1,6,'#fff') + P(0,2,8,1,'#3b568c') + P(0,6,8,1,'#3b568c')) },
+  { id: 'shoes',   name: 'Boots',             rate: 5,  price: 3000,   lvl: 6,  ico: () => spriteBoot(34) },
+  { id: 'shorts',  name: 'Shorts',            rate: 10, price: 8000,   lvl: 10, ico: () => SVG(10, 7, 30,
       P(0,0,10,2,'#1b3da6') + P(0,2,4,5,'#1b3da6') + P(6,2,4,5,'#1b3da6') + P(0,0,10,1,'#fff') + P(4,2,2,2,'#142a73')) },
-  { id: 'jersey',  name: 'Jersey',            rate: 3,  price: 5000,  lvl: 5, ico: () => SVG(12, 9, 30,
+  { id: 'jersey',  name: 'Jersey',            rate: 20, price: 20000,  lvl: 14, ico: () => SVG(12, 9, 30,
       P(2,0,8,5,'#c8102e') + P(0,0,2,3,'#c8102e') + P(10,0,2,3,'#c8102e') + P(2,5,8,4,'#c8102e')
       + P(4,0,4,1,'#fff') + P(2,0,8,1,'#8a0b1f') + P(5,3,2,3,'#fff')) },
-  { id: 'armband', name: "Captain's Armband", rate: 10, price: 30000, lvl: 9, ico: () => SVG(12, 7, 30,
+  { id: 'armband', name: "Captain's Armband", rate: 50, price: 100000, lvl: 20, ico: () => SVG(12, 7, 30,
       P(0,0,12,7,'#ffd24a') + P(0,0,12,1,'#d9a520') + P(0,6,12,1,'#d9a520') + P(0,0,1,7,'#d9a520')
       + `<text x="6" y="5.4" font-size="5" text-anchor="middle" fill="#1d1d1d" font-family="'Press Start 2P',monospace">C</text>`) },
 ];
@@ -858,7 +999,7 @@ function freshState() {
     goldenBoots: 0,
   };
 }
-const saveKey = () => 'fic_save_' + session.wallet;
+const saveKey = () => 'fic2_save_' + session.wallet; // v2: fresh start for everyone
 function save() { try { localStorage.setItem(saveKey(), JSON.stringify(state)); } catch (e) {} }
 function load() {
   try {
@@ -986,6 +1127,21 @@ const AudioSys = {
       this.tone(f, t + Math.random() * 2.2, 0.5, 'sawtooth', 0.025, f * 1.6);
     }
   },
+  buy() {
+    this.init();
+    if (this.muted) return;
+    const t = this.ctx.currentTime;
+    this.tone(880, t, 0.08, 'square', 0.08);
+    this.tone(1318.5, t + 0.09, 0.13, 'square', 0.08);
+  },
+  bonus() {
+    this.init();
+    if (this.muted) return;
+    const t = this.ctx.currentTime;
+    this.tone(300, t, 0.32, 'sawtooth', 0.08, 1500);
+    this.tone(1567.98, t + 0.28, 0.18, 'square', 0.07);
+    this.hiss(t + 0.05, 0.25, 0.04, 5000);
+  },
   toggle() {
     this.init();
     this.muted = !this.muted;
@@ -995,19 +1151,6 @@ const AudioSys = {
     b.classList.toggle('off', this.muted);
   },
 };
-
-/* ================= CLOUDS ================= */
-function spawnClouds(n) {
-  for (let i = 0; i < n; i++) {
-    const c = document.createElement('div');
-    c.className = 'cloud';
-    c.style.top = (3 + Math.random() * 84) + '%';
-    c.style.setProperty('--s', (1.6 + Math.random() * 2.4).toFixed(2));
-    c.style.animationDuration = (40 + Math.random() * 55) + 's';
-    c.style.animationDelay = (-Math.random() * 70) + 's';
-    document.body.appendChild(c);
-  }
-}
 
 /* ================= LOGIN ================= */
 function isValidSolana(w) { return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(w); }
@@ -1064,6 +1207,7 @@ function startGame() {
   renderHUD();
   fetchLeaderboard();
   fetchRewards();
+  fetchStats();
   pushScore().then(fetchRank);
 
   setInterval(passiveTick, 1000);
@@ -1072,6 +1216,8 @@ function startGame() {
   setInterval(fetchLeaderboard, 20000);
   setInterval(benchChat, 10000);
   setInterval(fetchRewards, 30000);
+  setInterval(fetchStats, 15000);
+  setInterval(fetchEvents, 10000);
   setTimeout(spawnGoldenBall, GOLDEN.every);
   setTimeout(spawnGoldenBoot, BOOT.every);
   window.addEventListener('beforeunload', save);
@@ -1155,8 +1301,12 @@ function passiveTick() {
   if (Date.now() < boostUntil) {
     $('boost-banner').style.display = 'block';
     $('boost-timer').textContent = Math.ceil((boostUntil - Date.now()) / 1000);
+    $('hype-overlay').style.display = 'block';
+    $('pitch').classList.add('hype-pitch');
   } else {
     $('boost-banner').style.display = 'none';
+    $('hype-overlay').style.display = 'none';
+    $('pitch').classList.remove('hype-pitch');
   }
   // card cooldown display
   const ov = $('card-overlay');
@@ -1187,7 +1337,10 @@ function spawnGoldenBall() {
   b.addEventListener('click', (e) => {
     e.stopPropagation();
     clearTimeout(gone); b.remove();
+    AudioSys.bonus();
     boostUntil = Date.now() + GOLDEN.boostDur;
+    $('hype-overlay').style.display = 'block'; // instant hype, hidden by passiveTick when over
+    $('pitch').classList.add('hype-pitch');
     state.goldenBalls++;
     toast('GOLDEN BALL! Clicks <b>x' + GOLDEN.mult + '</b> for ' + (GOLDEN.boostDur / 1000) + 's!');
     renderHUD(); checkQuestsUI(); save();
@@ -1204,6 +1357,7 @@ function spawnGoldenBoot() {
   b.addEventListener('click', (e) => {
     e.stopPropagation();
     clearTimeout(gone); b.remove();
+    AudioSys.bonus();
     const payout = perClickBase() * BOOT.payoutMult;
     earn(payout);
     state.goldenBoots++;
@@ -1240,6 +1394,7 @@ function renderShop() {
     if (state.balls < price) return;
     state.balls -= price;
     state.ballLevel++;
+    AudioSys.buy();
     toast('Ball upgraded to <b>Lv' + state.ballLevel + '</b>! (' + perClickBase() + '/click)');
     renderShop(); renderHUD(); save();
   };
@@ -1260,6 +1415,7 @@ function renderShop() {
     if (state.accessories.includes(a.id) || playerLevel() < a.lvl || state.balls < a.price) return;
     state.balls -= a.price;
     state.accessories.push(a.id);
+    AudioSys.buy();
     toast('<b>' + a.name + '</b> equipped! +' + a.rate + ' balls/sec');
     renderShop(); renderHUD(); save();
   });
@@ -1312,7 +1468,7 @@ function benchChat() {
 }
 
 /* squad figures standing on the pitch */
-const SQUAD_SPOTS = [[18,28],[34,60],[48,22],[64,58],[78,30],[26,74],[56,76],[72,12],[42,42],[12,52]];
+const SQUAD_SPOTS = [[18,28],[34,60],[48,22],[64,58],[78,30],[26,74],[56,76],[72,12],[42,42],[12,52],[84,68],[8,18],[36,12],[66,82]];
 function renderSquad() {
   $('squad-layer').innerHTML = state.players.map((id, i) => {
     const p = FOOTBALLERS.find(x => x.id === id);
@@ -1354,6 +1510,7 @@ function renderQuests() {
     if (state.questsClicks.includes(t) || state.clicks < t) return;
     state.questsClicks.push(t);
     earn(t);
+    AudioSys.buy();
     toast('Quest complete! <b>+' + fmt(t) + '</b> balls');
     renderQuests(); renderHUD(); save();
   });
@@ -1362,6 +1519,7 @@ function renderQuests() {
     if (state.questsPlayers.includes(q.count) || state.players.length < q.count) return;
     state.questsPlayers.push(q.count);
     earn(q.reward);
+    AudioSys.buy();
     toast('Squad quest complete! <b>+' + fmt(q.reward) + '</b> balls');
     renderQuests(); renderHUD(); save();
   });
@@ -1386,6 +1544,7 @@ function renderQuests() {
     if (state.questsGolden.includes(q.id) || have < q.count) return;
     state.questsGolden.push(q.id);
     earn(q.reward);
+    AudioSys.buy();
     toast('Golden quest complete! <b>+' + fmt(q.reward) + '</b> balls');
     renderQuests(); renderHUD(); save();
   });
@@ -1447,10 +1606,11 @@ document.querySelectorAll('#tabs button').forEach(btn => btn.onclick = () => {
 });
 
 /* ================= LEADERBOARD (online) ================= */
+let bannedShown = false;
 async function pushScore() {
   if (!state) return;
   try {
-    await fetch('/api/score', {
+    const res = await fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1458,9 +1618,24 @@ async function pushScore() {
         wallet: session.wallet,
         totalBalls: Math.floor(state.totalBalls),
         level: playerLevel(),
+        clicks: state.clicks,
       }),
     });
+    const d = await res.json();
+    if (d && d.banned && !bannedShown) {
+      bannedShown = true;
+      cardUntil = Infinity; // clicking permanently disabled
+      refSay("You're dangerous, you've injured a player, get out!", 'red');
+      toast('&#128683; YOU HAVE BEEN BANNED FOR CHEATING.<br>Removed from the leaderboard.');
+    }
   } catch (e) { /* offline - retry next interval */ }
+}
+async function fetchStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const d = await res.json();
+    $('hud-online').textContent = d.online;
+  } catch (e) { /* offline */ }
 }
 async function fetchRewards() {
   try {
@@ -1470,13 +1645,47 @@ async function fetchRewards() {
     $('hud-rewards').textContent = (d.yourRewards || 0).toFixed(4);
   } catch (e) { /* offline */ }
 }
+let myRank = null;
 async function fetchRank() {
   if (!session.wallet) return;
   try {
     const res = await fetch('/api/rank/' + encodeURIComponent(session.wallet));
     const d = await res.json();
-    $('hud-rank').textContent = d.rank ? '#' + d.rank : '—';
+    myRank = d.rank || null;
+    $('hud-rank').textContent = myRank ? '#' + myRank : '—';
+    renderMe();
   } catch (e) { /* offline */ }
+}
+function renderMe() {
+  if (!state) return;
+  const me = $('lb-me');
+  me.style.display = 'flex';
+  me.innerHTML = `<span class="rank">${myRank ? '#' + myRank : '—'}</span>
+    <span class="name">ME &mdash; ${escapeHtml(session.pseudo)}</span>
+    <span class="score">${fmt(state.totalBalls)}</span>`;
+}
+
+/* ================= LIVE EVENT FEED ================= */
+let lastEventAt = Date.now(); // only show events that happen after login
+async function fetchEvents() {
+  try {
+    const res = await fetch('/api/events');
+    const evs = await res.json();
+    evs.filter(e => e.at > lastEventAt).forEach(showEvent);
+    if (evs.length) lastEventAt = Math.max(lastEventAt, ...evs.map(e => e.at));
+  } catch (e) { /* offline */ }
+}
+function showEvent(e) {
+  const div = document.createElement('div');
+  div.className = 'event-msg';
+  div.innerHTML = e.type === 'claim'
+    ? '&#128176; Creator fees claimed: <b>' + (+e.amount).toFixed(4) + ' SOL</b>'
+    : '&#127873; <b>' + e.players + ' player' + (e.players > 1 ? 's' : '') + '</b> rewarded: <b>' + (+e.amount).toFixed(4) + ' SOL</b>';
+  $('event-feed').appendChild(div);
+  setTimeout(() => {
+    div.classList.add('out');
+    setTimeout(() => div.remove(), 400);
+  }, 5000);
 }
 async function fetchLeaderboard() {
   const list = $('lb-list'), status = $('lb-status');
@@ -1497,8 +1706,42 @@ async function fetchLeaderboard() {
   }
 }
 
+/* ================= MODALS (How to Play / Changelogs) ================= */
+function openModal(title, html) {
+  $('modal-title').textContent = title;
+  $('modal-content').innerHTML = html;
+  $('modal-overlay').style.display = 'flex';
+}
+$('modal-close').addEventListener('click', () => $('modal-overlay').style.display = 'none');
+$('modal-overlay').addEventListener('click', (e) => {
+  if (e.target === $('modal-overlay')) $('modal-overlay').style.display = 'none';
+});
+
+const HOWTO_HTML = `
+<div class="mc-item"><span class="mi">${spriteBall(false, 14)}</span><span><b>CLICK THE PITCH</b> to earn balls. Upgrade your ball in the shop to earn more per click (up to Lv${BALL_MAX_LEVEL}).</span></div>
+<div class="mc-item"><span class="mi">${spriteCursor(12)}</span><span><b>LEVEL UP</b> by clicking. Higher levels unlock footballers and accessories.</span></div>
+<div class="mc-item"><span class="mi">${spritePlayer(FOOTBALLERS[0].c, 13)}</span><span><b>SIGN FOOTBALLERS</b> from the bench. They enter the pitch and earn balls every second, even while you rest. Accessories add passive income too.</span></div>
+<div class="mc-item"><span class="mi">${spriteBall(true, 14)}</span><span><b>GOLDEN BALL</b> appears every 2min30: catch it for x5 clicks during 5s. <b>GOLDEN BOOT</b> appears every minute: instant 100x your per-click value.</span></div>
+<div class="mc-item"><span class="mi">${spriteCursor(12)}</span><span><b>QUESTS</b> reward you with balls for clicking milestones, signing players and catching golden bonuses.</span></div>
+<div class="mc-item"><span class="mi">${spriteWorldCup(16)}</span><span><b>EARN REAL SOL:</b> every 2 minutes the creator pool is claimed and the TOP 50 players are rewarded (top 1-5: 5% each, 6-15: 1%, 16-50: 0.4%).</span></div>
+<div class="mc-item"><span class="mi">&#129000;</span><span><b>FAIR PLAY:</b> click too fast and the referee gives you a yellow card (80+/10s) or a red card (120+/10s). Cheaters are banned from the leaderboard automatically.</span></div>
+<div class="mc-item"><span class="mi">${spriteSol(13)}</span><span><b>REQUIREMENT:</b> your wallet must hold $ARENA to play.</span></div>`;
+
+const CHANGELOG_HTML = `
+<div class="mc-item"><span class="mi">&#9917;</span><span>Add More levels for the Ball Upgrade : Max lvl 10 -&gt; 15 for the moment</span></div>
+<div class="mc-item"><span class="mi">&#128683;</span><span>Add a security for the leaderboard to ban cheaters</span></div>
+<div class="mc-item"><span class="mi">&#128095;</span><span>Add More Accessories, New Footballers</span></div>
+<div class="mc-item"><span class="mi">&#127912;</span><span>Design rework (Remove Clouds, enhance game quality...)</span></div>
+<div class="mc-item"><span class="mi">&#128190;</span><span>Add a SSD disk to fix the persistance issue</span></div>
+<div class="mc-item"><span class="mi">&#128101;</span><span>Display current players online/total players</span></div>
+<div class="mc-item"><span class="mi">&#128214;</span><span>How To Work, Changelogs windows</span></div>
+<div class="mc-item"><span class="mi">&#128260;</span><span>Reset stats, players wipe due to the cheaters on the BETA version.</span></div>`;
+
+$('btn-howto').addEventListener('click', () => openModal('HOW TO PLAY', HOWTO_HTML));
+$('btn-changelog').addEventListener('click', () => openModal('CHANGELOGS — ' + GAME_VERSION, CHANGELOG_HTML));
+$('game-version').textContent = GAME_VERSION;
+
 /* ================= INIT ================= */
-spawnClouds(10);
 decorateIsland($('login-island'));
 // pixel logos on quest section titles
 $('st-click').innerHTML  = spriteCursor(13) + ' CLICK QUESTS';
