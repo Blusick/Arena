@@ -15,6 +15,25 @@ const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'leaderboard.json');
 const REWARDS_FILE = path.join(DATA_DIR, 'rewards.json');
 
+/* ===== ONE-TIME DATA WIPE =====
+   Bump DATA_VERSION to wipe ALL server stats (leaderboard + rewards)
+   exactly once on the next deploy, wherever the data lives. */
+const DATA_VERSION = 2; // v1.1 update: full reset (cheaters on the BETA)
+const VERSION_FILE = path.join(DATA_DIR, 'data-version.json');
+(function migrateData() {
+  let v = 0;
+  try { v = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8')).version || 0; } catch {}
+  if (v < DATA_VERSION) {
+    try { fs.writeFileSync(DATA_FILE, '{}\n'); } catch (e) { console.error('[reset]', e.message); }
+    try {
+      fs.writeFileSync(REWARDS_FILE, JSON.stringify(
+        { totalClaimed: 0, players: {}, lastClaimAt: null, lastClaimAmount: 0 }, null, 2));
+    } catch (e) { console.error('[reset]', e.message); }
+    fs.writeFileSync(VERSION_FILE, JSON.stringify({ version: DATA_VERSION, wipedAt: Date.now() }));
+    console.log(`[reset] ALL STATS WIPED (data version ${v} -> ${DATA_VERSION})`);
+  }
+})();
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 

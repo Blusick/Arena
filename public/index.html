@@ -999,7 +999,7 @@ function freshState() {
     goldenBoots: 0,
   };
 }
-const saveKey = () => 'fic2_save_' + session.wallet; // v2: fresh start for everyone
+const saveKey = () => 'fic3_save_' + session.wallet; // v1.1: full reset for everyone (levels, balls, players)
 function save() { try { localStorage.setItem(saveKey(), JSON.stringify(state)); } catch (e) {} }
 function load() {
   try {
